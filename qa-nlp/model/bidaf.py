@@ -61,6 +61,21 @@ class BiDAF(nn.Module):
         ctx_emb_c = self._get_contextual_embedding(char_c, word_c)
         # Apply step 1 to 3 for query
         ctx_emb_q = self._get_contextual_embedding(char_q, word_q)
+        # Step 4: Attention flow
+        bs, t, _ = ctx_emb_c.shape
+        _, j, _ = ctx_emb_q.shape
+        # Unsqueeze and expand to make both matrices match shape (bs, t, j, 2d)
+        h = ctx_emb_c.unsqueeze(2).expand(bs, t, j, 2 * self.d)  # (bs, t, 2d) -> (bs, t, 1, 2d) -> (bs, t, j, 2d)
+        u = ctx_emb_q.unsqueeze(1).expand(bs, t, j, 2 * self.d)  # (bs, j, 2d) -> (bs, 1, j, 2d) -> (bs, t, j, 2d)
+        # Compute similarity matrix
+        alpha_input = torch.cat([h, u, h * u], dim=-1)  # (bs, t, j, 6d)
+        sim_mtx = self.w_s(alpha_input).squeeze()  # (bs, t, j, 1) -> (bs, t, j)
+        # Step 4.1: C2Q
+        attention_weights = F.softmax(sim_mtx, dim=-1)  # (bs, t, j)
+        u_tilde = torch.bmm(attention_weights, ctx_emb_q)  # (bs, t, j) * (bs, j, 2d) -> (bs, t, 2d)
+        # Step 4.2: Q2C
+        
+
 
 
 
