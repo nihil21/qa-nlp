@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.char_embedding import CharEmbedding
+from model.char_embedder import CharEmbedding
 from model.word_embedding import WordEmbedding
-from model.highway_net import HighwayNet
+from model.convolutional_highway_network import HighwayNet
 from typing import List, Tuple, Optional
 
 
