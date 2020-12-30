@@ -6,11 +6,11 @@ import numpy as np
 from typing import List
 
 
-class CharacterOneHotEncoder:
-    def __init__(self,
-                 dataframe: pd.DataFrame,
-                 context_list: List[str],
-                 encoding_dimension: int = 100):
+class CharacterOneHotEncoder ():
+    def __init__ (self,
+                  dataframe: pd.DataFrame,
+                  context_list: List[str],
+                  encoding_dimension: int = 100):
         # extracting unique characters from contexts and questions
         unique_chars = {}
 
@@ -47,8 +47,8 @@ class CharacterOneHotEncoder:
 
         self.char_to_onehot['UNK'] = one_hot_chars[-1]
 
-    def __get_char_onehot(self,
-                          character: str) -> np.array:
+    def __get_char_onehot (self,
+                         character: str) -> np.array:
         # Given a character, return its one-hot encoding
 
         assert len(character) == 1, "Error: expected char got string"
@@ -58,9 +58,10 @@ class CharacterOneHotEncoder:
         else:
             return self.char_to_onehot['UNK']
 
-    def get_word_onehot(self,
-                        word: str) -> torch.cuda.FloatTensor:
+    def get_word_onehot (self,
+                         word: str) -> torch.cuda.FloatTensor:
         # Given a word, return its list of one-hot encoded characters
+
         word_encoding = []
 
         for character in word:

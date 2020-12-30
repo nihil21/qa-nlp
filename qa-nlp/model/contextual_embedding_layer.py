@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-
-class ContextualEmbeddingLayer(nn.Module):
-    def __init__(self,
-                 input_embedding_dim: int = 600):
+class ContextualEmbeddingLayer (nn.Module):
+    def __init__ (self,
+                  input_embedding_dim: int = 600,
+                  ):
         super(ContextualEmbeddingLayer, self).__init__()
 
         self.lstm = nn.LSTM(input_size=input_embedding_dim,
