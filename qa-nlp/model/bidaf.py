@@ -84,7 +84,7 @@ class BiDAF(nn.Module):
         # Step 6: Output layer
         p_start = F.softmax(self.w_p_start(torch.cat([g, m], dim=-1)), dim=1)  # (bs, t)
         m_2 = self.out_rnn(m)  # (bs, t, 2d)
-        p_end = F.softmax(self.w_p_start(torch.cat([g, m_2], dim=-1)), dim=1)  # (bs, t)
+        p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)), dim=1)  # (bs, t)
         return p_start, p_end
 
 # IDEAS:
