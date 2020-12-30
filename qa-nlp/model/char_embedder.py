@@ -11,6 +11,8 @@ class CharacterOneHotEncoder ():
                   dataframe: pd.DataFrame,
                   context_list: List[str],
                   encoding_dimension: int = 100):
+        self.encoding_dimension = encoding_dimension
+
         # extracting unique characters from contexts and questions
         unique_chars = {}
 
@@ -58,16 +60,16 @@ class CharacterOneHotEncoder ():
         else:
             return self.char_to_onehot['UNK']
 
-    def get_word_onehot (self,
-                         word: str) -> torch.cuda.FloatTensor:
+    def get_word_onehot(self,
+                        word: str) -> torch.cuda.LongTensor:
         # Given a word, return its list of one-hot encoded characters
 
-        word_encoding = []
+        word_encoding = np.zeros(self.encoding_dimension)
 
         for character in word:
-            word_encoding.append(self.__get_char_onehot(character))
+            word_encoding += self.__get_char_onehot(character)  # shape: (encoding_dimension)
 
-        return torch.cuda.FloatTensor(word_encoding, device=DEVICE)
+        return torch.cuda.LongTensor(word_encoding, device=DEVICE)
 
 
 class CharacterEmbedder(nn.Module):
