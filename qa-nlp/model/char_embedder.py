@@ -6,11 +6,12 @@ import numpy as np
 from typing import List
 
 
-class CharacterOneHotEncoder ():
-    def __init__ (self,
-                  dataframe: pd.DataFrame,
-                  context_list: List[str],
-                  encoding_dimension: int = 100):
+class CharacterOneHotEncoder:
+    def __init__(self,
+                 dataframe: pd.DataFrame,
+                 context_list: List[str],
+                 encoding_dimension: int = 100):
+
         self.encoding_dimension = encoding_dimension
 
         # extracting unique characters from contexts and questions
@@ -31,7 +32,7 @@ class CharacterOneHotEncoder ():
 
         self.selected_chars = []
 
-        for element in sorted( ((v,k) for k,v in unique_chars.items()), reverse=True):
+        for element in sorted(((v, k) for k, v in unique_chars.items()), reverse=True):
             # only the 'encoding_dimension' most frequent characters are considered for the one-hot encoding
             # the not selected ones are encoded as unknown (UNK)
             if len(self.selected_chars) < encoding_dimension - 1:
@@ -39,7 +40,7 @@ class CharacterOneHotEncoder ():
             else:
                 break
 
-        one_hot_chars = np.zeros((len(self.selected_chars)+1, len(self.selected_chars)+1))
+        one_hot_chars = np.zeros((len(self.selected_chars) + 1, len(self.selected_chars) + 1))
         np.fill_diagonal(one_hot_chars, 1)
 
         self.char_to_onehot = {}
@@ -49,8 +50,8 @@ class CharacterOneHotEncoder ():
 
         self.char_to_onehot['UNK'] = one_hot_chars[-1]
 
-    def __get_char_onehot (self,
-                         character: str) -> np.array:
+    def __get_char_onehot(self,
+                          character: str) -> np.array:
         # Given a character, return its one-hot encoding
 
         assert len(character) == 1, "Error: expected char got string"
@@ -61,15 +62,17 @@ class CharacterOneHotEncoder ():
             return self.char_to_onehot['UNK']
 
     def get_word_onehot(self,
-                        word: str) -> torch.cuda.LongTensor:
+                        word: str,
+                        max_word_len: int) -> np.array:
+
         # Given a word, return its list of one-hot encoded characters
+        # considering padding (as a zeros vector is created)
+        word_encoding = np.zeros((max_word_len, self.encoding_dimension))
 
-        word_encoding = np.zeros(self.encoding_dimension)
+        for i in range(len(word)):
+            word_encoding[i] = self.__get_char_onehot(word[i])
 
-        for character in word:
-            word_encoding += self.__get_char_onehot(character)  # shape: (encoding_dimension)
-
-        return torch.cuda.LongTensor(word_encoding, device=DEVICE)
+        return word_encoding
 
 
 class CharacterEmbedder(nn.Module):
@@ -105,4 +108,5 @@ class CharacterEmbedder(nn.Module):
         x = self.fc2(x)
         x = nn.functional.relu(x)
 
+        # x.shape = (batch_size, output_char_embedding_dimension)
         return x

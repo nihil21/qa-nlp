@@ -1,30 +1,29 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.char_embedder import CharacterEmbedder
-from model.word_embedding import WordEmbedding
-from model.convolutional_highway_network import HighwayNet
+from embedder import Embedder
+from char_embedder import CharacterEmbedder
+from convolutional_highway_network import ConvolutionalHighwayNetwork
 from typing import List, Tuple, Optional
 
 
 class BiDAF(nn.Module):
 
     def __init__(self,
-                 char_emb_dim: int,
-                 char_vocab_dim: int,
-                 char_out_dim: int,
-                 kernels: List[Tuple[int]],
-                 word_emb_dim: int,
-                 word_vocab_dim: int,
+                 embedder: Embedder,
                  use_dropout: Optional[bool] = False):
         super(BiDAF, self).__init__()
+
+        char_emb_dim = embedder.char_one_hot_encoder.encoding_dimension
+        word_emb_dim = embedder.word_embedding_dim
         self.d = char_emb_dim + word_emb_dim
-        # Step 1: Character embedding
-        self.char_embedding = CharEmbedding(char_emb_dim, char_vocab_dim, char_out_dim, kernels, use_dropout)
-        # Step 2: Word embedding
-        self.char_embedding = WordEmbedding(word_emb_dim, word_vocab_dim)
+
+        # Step 1 & 2: Character and Word embedding
+        self.embedder = embedder
+        self.character_embedder = CharacterEmbedder()
+
         # Highway network to process character + word concatenated embeddings
-        self.highway_net = HighwayNet()
+        self.highway_net = ConvolutionalHighwayNetwork()
         # Step 3: Contextual embedding layer
         self.ctx_rnn = nn.GRU(input_size=self.d, hidden_size=self.d, bidirectional=True, batch_first=True,
                               dropout=0.2 if use_dropout else 0)  # shared between context and query
@@ -41,11 +40,25 @@ class BiDAF(nn.Module):
                               dropout=0.2 if use_dropout else 0)
         self.w_p_end = nn.Linear(in_features=10 * self.d, out_features=1, bias=False)
 
-    def _get_contextual_embedding(self, char_tensor: torch.LongTensor, word_tensor: torch.LongTensor):
-        # Step 1: Character embedding
-        char_emb = self.char_embedding(char_tensor)
-        # Step 2: Word embedding
-        word_emb = self.word_embedding(word_tensor)
+    def _get_contextual_embedding(self, batch_word_seq: Tuple[List[str]]):
+        # Step 1 & 2: Word and Character embedding
+        word_emb, char_emb, lengths = self.embedder.get_embedding(batch_word_seq)
+
+        # word_emb shape: (batch_size, sequence_length, word_embedding_dim)
+        # char_emb shape: (batch_size, sequence_length, word_length, char_embedding_dim)
+
+        batch_size = char_emb.shape[0]
+
+        char_emb = char_emb.view(char_emb.shape[0] * char_emb.shape[1], char_emb.shape[2], char_emb.shape[3])
+        # char_emb shape: (batch_size * sequence_length, word_length, char_embedding_dim)
+
+        conv_char_emb = self.character_embedder(char_emb)
+        # conv_char_emb shape: (batch_size * sequence_length, output_char_embedding_dim)
+
+        conv_char_emb.unsqueeze_(1)
+        conv_char_emb = conv_char_emb.view(batch_size, -1, conv_char_emb.shape[2])
+        # conv_char_emb shape: (batch_size, sequence_length, output_char_embedding_dim)
+
         # Apply highway network
         merged_emb = self.highway_net(torch.cat([char_emb, word_emb], dim=2))
         # Step 3: Contextual embedding layer
@@ -53,14 +66,12 @@ class BiDAF(nn.Module):
         return ctx_emb
 
     def forward(self,
-                word_c: torch.LongTensor,
-                char_c: torch.LongTensor,
-                word_q: torch.LongTensor,
-                char_q: torch.LongTensor):
+                batch_context: Tuple[List[str]],
+                batch_query: Tuple[List[str]]):
         # Apply step 1 to 3 for context
-        ctx_emb_c = self._get_contextual_embedding(char_c, word_c)
+        ctx_emb_c = self._get_contextual_embedding(batch_context)
         # Apply step 1 to 3 for query
-        ctx_emb_q = self._get_contextual_embedding(char_q, word_q)
+        ctx_emb_q = self._get_contextual_embedding(batch_query)
         # Step 4: Attention flow
         bs, t, _ = ctx_emb_c.shape
         _, j, _ = ctx_emb_q.shape
