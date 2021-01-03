@@ -9,6 +9,7 @@ print("using this device:", DEVICE)
 
 # Define PAD token
 PAD = '<PAD>'
+UNK = '<UNK>'
 
 # Lambda for computing the mean of a list
 mean: Callable[[List[float]], float] = lambda l: sum(l) / len(l)
