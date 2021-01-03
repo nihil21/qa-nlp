@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from typing import Tuple
 
 
@@ -43,7 +44,7 @@ class ConvolutionalHighwayNetwork(nn.Module):
         t = torch.sigmoid(torch.mean(t_activation, dim=2))
         t.unsqueeze_(3)
 
-        y = nn.functional.relu((1 - t) * x + t * h)
+        y = F.relu((1 - t) * x + t * h)
 
         h = self.conv2(y)
 
@@ -51,7 +52,7 @@ class ConvolutionalHighwayNetwork(nn.Module):
         t = torch.sigmoid(torch.mean(t_activation, dim=2))
         t.unsqueeze_(3)
 
-        output = nn.functional.relu((1 - t) * y + t * h)
+        output = F.relu((1 - t) * y + t * h)
         output.squeeze_(1)
 
         # output.shape = (batch_size, word_length, input_embedding_dim)

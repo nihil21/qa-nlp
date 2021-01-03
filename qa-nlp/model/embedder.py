@@ -1,9 +1,7 @@
-import torch
-import torch.nn as nn
-import pandas as pd
 import numpy as np
-from char_embedder import CharacterOneHotEncoder
-from typing import List, Dict, Tuple, Optional
+from model.char_embedder import CharacterOneHotEncoder
+from typing import Dict
+from utils.squad_utils import *
 
 
 class Embedder:
@@ -42,14 +40,14 @@ class Embedder:
                 # Embedding sequence of words using word embedding matrix (word encoding) and
                 # char one-hot encoding (char encoding)
                 embedded_seq = [(self.word_embedding_matrix[self.word_to_idx[w]],
-                                self.char_one_hot_encoder.get_word_onehot(w, max_word_len))
+                                 self.char_one_hot_encoder.get_word_onehot(w, max_word_len))
                                 for w in padded_seq]
 
-                word_embedding, char_embedding = to_tuple_of_lists(embedded_seq)
+                (word_embedding, char_embedding) = to_tuple_of_lists(embedded_seq)
 
                 batch_word_embedding.append(word_embedding)
                 batch_char_embedding.append(char_embedding)
 
-        return torch.cuda.FloatTensor(batch_word_embedding, device=DEVICE),\
-               torch.cuda.LongTensor(batch_char_embedding, device=DEVICE),\
+        return torch.cuda.FloatTensor(batch_word_embedding, device=DEVICE), \
+               torch.cuda.LongTensor(batch_char_embedding, device=DEVICE), \
                torch.cuda.IntTensor(lengths, device=DEVICE)

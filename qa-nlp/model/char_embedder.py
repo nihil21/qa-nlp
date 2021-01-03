@@ -1,5 +1,5 @@
-import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import pandas as pd
 import numpy as np
 
@@ -25,6 +25,7 @@ class CharacterOneHotEncoder:
                     unique_chars[c] += 1
 
             for word in context_list[row['context_index']].split(' '):
+                # for word in context_list[row['context_index']]:  # context_list already tokenized
                 for c in word:
                     if c not in unique_chars:
                         unique_chars[c] = 0
@@ -99,14 +100,14 @@ class CharacterEmbedder(nn.Module):
 
         x = self.conv_layer(x)
         x = x.squeeze(3)
-        x = nn.functional.relu(x)
-        x = nn.functional.max_pool1d(x, kernel_size=x.shape[2])
+        x = F.relu(x)
+        x = F.max_pool1d(x, kernel_size=x.shape[2])
         x = x.squeeze(2)
 
         x = self.fc1(x)
-        x = nn.functional.relu(x)
+        x = F.relu(x)
         x = self.fc2(x)
-        x = nn.functional.relu(x)
+        x = F.relu(x)
 
         # x.shape = (batch_size, output_char_embedding_dimension)
         return x
