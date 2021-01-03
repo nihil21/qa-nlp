@@ -6,17 +6,15 @@ from typing import Optional
 class WordEmbedder(nn.Module):
     
     def __init__(self,
-                 word_emb_dim: int,
-                 word_vocab_dim: int,
-                 init_emb: Optional[torch.Tensor] = None,
+                 init_emb: torch.Tensor,
                  trainable: Optional[bool] = False):
         super(WordEmbedder, self).__init__()
         # Create embedding layer
-        self.embedding = nn.Embedding(word_vocab_dim, word_emb_dim)
+        self.embedding = nn.Embedding(*init_emb.shape)
         if init_emb is not None:  # initialize weights to the embeddings provided
             self.embedding.load_state_dict({'weight': init_emb})
             self.embedding.weight.requires_grad = trainable
-        self.word_emb_dim = word_emb_dim
+        self.word_emb_dim = init_emb.shape[1]
 
-    def forward(self, x: torch.LongTensor):
+    def forward(self, x: torch.LongTensor) -> torch.FloatTensor:
         return self.embedding(x)

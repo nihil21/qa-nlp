@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from char_embedder import CharacterEmbedder
+from char_embedder import CharEmbedder
 from word_embedder import WordEmbedder
 from convolutional_highway_network import ConvolutionalHighwayNetwork
 from typing import Optional
@@ -10,7 +10,7 @@ from typing import Optional
 class BiDAF(nn.Module):
 
     def __init__(self,
-                 char_embedder: CharacterEmbedder,
+                 char_embedder: CharEmbedder,
                  word_embedder: WordEmbedder,
                  # embedder: Embedder,
                  use_dropout: Optional[bool] = False):
@@ -18,7 +18,7 @@ class BiDAF(nn.Module):
 
         # char_emb_dim = embedder.char_one_hot_encoder.encoding_dimension
         # word_emb_dim = embedder.word_embedding_dim
-        self.character_embedder = char_embedder
+        self.char_embedder = char_embedder
         self.word_embedder = word_embedder
         self.d = char_embedder.char_emb_dim + word_embedder.word_emb_dim
 
@@ -55,7 +55,7 @@ class BiDAF(nn.Module):
         # char_emb = char_emb.view(char_emb.shape[0] * char_emb.shape[1], char_emb.shape[2], char_emb.shape[3])
         # char_emb shape: (batch_size * sequence_length, word_length, char_embedding_dim)
 
-        char_emb = self.character_embedder(batch_char_seq)
+        char_emb = self.char_embedder(batch_char_seq)
         word_emb = self.word_embedder(batch_word_seq)
         # conv_char_emb shape: (batch_size * sequence_length, output_char_embedding_dim)
 

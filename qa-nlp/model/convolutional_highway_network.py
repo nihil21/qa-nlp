@@ -35,9 +35,8 @@ class ConvolutionalHighwayNetwork(nn.Module):
                                stride=1,
                                padding=(int(kernel[0] / 2), 0))
 
-    def forward(self, x):
-        # x.shape = (batch_size, input_channel = 1, word_length, input_embedding_dim)
-
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # (batch_size, input_channel = 1, word_length, input_embedding_dim)
         h = self.conv1(x)
 
         t_activation = self.gate1(x)
@@ -55,5 +54,5 @@ class ConvolutionalHighwayNetwork(nn.Module):
         output = F.relu((1 - t) * y + t * h)
         output.squeeze_(1)
 
-        # output.shape = (batch_size, word_length, input_embedding_dim)
+        # (batch_size, word_length, input_embedding_dim)
         return output

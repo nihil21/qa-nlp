@@ -12,7 +12,7 @@ class TensorMaker:
         self.word_to_idx = word_to_idx
         self.char_to_idx = char_to_idx
 
-    def get_tensor(self, sentences: Tuple[List[str]]) -> (torch.FloatTensor, torch.LongTensor, torch.IntTensor):
+    def get_tensor(self, sentences: Tuple[List[str]]) -> (torch.LongTensor, torch.LongTensor, torch.IntTensor):
         # Find max length of a sentence (number of words) in sentences
         max_sentence_len = max(map(len, sentences))
         # Find max length of a word (number of chars) in sentences
@@ -31,6 +31,6 @@ class TensorMaker:
                     for k in range(len(sentences[i][j])):  # loop over chars in current word
                         char_tensor[i, j, k] = self.char_to_idx.get(sentences[i][j][k], self.char_to_idx[UNK])
 
-        return torch.cuda.FloatTensor(word_tensor, device=DEVICE), \
-               torch.cuda.LongTensor(char_tensor, device=DEVICE), \
-               torch.cuda.IntTensor(lengths, device=DEVICE)
+        return torch.cuda.LongTensor(word_tensor, device=DEVICE), \
+            torch.cuda.LongTensor(char_tensor, device=DEVICE), \
+            torch.cuda.IntTensor(lengths, device=DEVICE)
