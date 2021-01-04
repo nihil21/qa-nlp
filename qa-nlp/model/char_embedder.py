@@ -26,10 +26,11 @@ class CharEmbedder(nn.Module):
                                     out_channels=output_channels,
                                     kernel_size=(kernel_height, input_char_embedding_dimension),
                                     stride=1,
-                                    padding=(1, 0))
+                                    padding=(1, 0),
+                                    bias=False)
 
-        self.fc1 = nn.Linear(in_features=output_channels, out_features=hidden_dim)
-        self.fc2 = nn.Linear(in_features=hidden_dim, out_features=out_char_emb_dim)
+        self.fc1 = nn.Linear(in_features=output_channels, out_features=hidden_dim, bias=False)
+        self.fc2 = nn.Linear(in_features=hidden_dim, out_features=out_char_emb_dim, bias=False)
 
         self.char_emb_dim = out_char_emb_dim
 

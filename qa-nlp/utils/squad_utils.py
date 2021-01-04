@@ -1,11 +1,5 @@
-import torch
 from itertools import zip_longest
 from typing import Callable, List, Tuple
-
-
-# Use GPU acceleration if possible
-DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-print("using this device:", DEVICE)
 
 # Define PAD token
 PAD = '<PAD>'
