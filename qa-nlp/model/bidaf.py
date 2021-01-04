@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from char_embedder import CharEmbedder
-from word_embedder import WordEmbedder
-from convolutional_highway_network import ConvolutionalHighwayNetwork
+from model.char_embedder import CharEmbedder
+from model.word_embedder import WordEmbedder
+from model.convolutional_highway_network import ConvolutionalHighwayNetwork
 from typing import Optional
 
 
@@ -27,7 +27,7 @@ class BiDAF(nn.Module):
         # self.character_embedder = CharacterEmbedder()
 
         # Highway network to process character + word concatenated embeddings
-        self.highway_net = ConvolutionalHighwayNetwork()
+        self.highway_net = ConvolutionalHighwayNetwork(input_embedding_dim= 100)
         # Step 3: Contextual embedding layer
         self.ctx_rnn = nn.GRU(input_size=self.d, hidden_size=self.d, bidirectional=True, batch_first=True,
                               dropout=0.2 if use_dropout else 0)  # shared between context and query
@@ -86,7 +86,7 @@ class BiDAF(nn.Module):
         u = ctx_emb_q.unsqueeze(1).expand(bs, t, j, 2 * self.d)  # (bs, j, 2d) -> (bs, 1, j, 2d) -> (bs, t, j, 2d)
         # Compute similarity matrix
         alpha_input = torch.cat([h, u, h * u], dim=-1)  # (bs, t, j, 6d)
-        sim_mtx = self.w_s(alpha_input).squeeze()  # (bs, t, j, 1) -> (bs, t, j)
+        sim_mtx = self.w_s(alpha_input).squeeze(3)  # (bs, t, j, 1) -> (bs, t, j)
         # Step 4.1: C2Q
         attention_a = F.softmax(sim_mtx, dim=1)  # (bs, t, j)
         u_tilde = torch.bmm(attention_a, ctx_emb_q)  # (bs, t, j) * (bs, j, 2d) -> (bs, t, 2d)
@@ -97,10 +97,11 @@ class BiDAF(nn.Module):
         # Merge C2Q and Q2C
         g = torch.cat([ctx_emb_c, u_tilde, ctx_emb_c * u_tilde, ctx_emb_c * h_tilde], dim=-1)  # (bs, t, 8d)
         # Step 5: Modelling layer
-        m = self.mod_rnn(g)  # (bs, t, 2d)
+        m, _ = self.mod_rnn(g)  # (bs, t, 2d)
         # Step 6: Output layer
-        p_start = F.softmax(self.w_p_start(torch.cat([g, m], dim=-1)), dim=1)  # (bs, t)
-        m_2 = self.out_rnn(m)  # (bs, t, 2d)
+        input_soft = self.w_p_start(torch.cat([g, m], dim=-1))
+        p_start = F.softmax(input_soft, dim=1)  # (bs, t)
+        m_2, _ = self.out_rnn(m)  # (bs, t, 2d)
         p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)), dim=1)  # (bs, t)
         return p_start, p_end
 

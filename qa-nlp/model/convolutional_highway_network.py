@@ -36,7 +36,10 @@ class ConvolutionalHighwayNetwork(nn.Module):
                                padding=(int(kernel[0] / 2), 0))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # (batch_size, input_channel = 1, word_length, input_embedding_dim)
+
+        # (batch_size, word_length, input_embedding_dim) -> (batch_size, input_channel = 1, word_length, input_embedding_dim):
+        x = x.unsqueeze(1)
+
         h = self.conv1(x)
 
         t_activation = self.gate1(x)
