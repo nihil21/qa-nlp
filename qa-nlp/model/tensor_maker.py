@@ -35,4 +35,4 @@ class TensorMaker:
 
         return torch.cuda.LongTensor(word_tensor, device=self.device), \
             torch.cuda.LongTensor(char_tensor, device=self.device), \
-            torch.IntTensor(lengths)
+            torch.IntTensor(lengths)  # SUPERFLUO (forse)

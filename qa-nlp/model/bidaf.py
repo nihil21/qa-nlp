@@ -46,23 +46,8 @@ class BiDAF(nn.Module):
 
     def _get_contextual_embedding(self, batch_word_seq: torch.LongTensor, batch_char_seq: torch.LongTensor):
         # Step 1 & 2: Word and Character embedding
-        # word_emb, char_emb, lengths = self.embedder.get_embedding(batch_word_seq)
-        # word_emb shape: (batch_size, sequence_length, word_embedding_dim)
-        # char_emb shape: (batch_size, sequence_length, word_length, char_embedding_dim)
-
-        # batch_size = batch_word_seq.shape[0]
-
-        # char_emb = char_emb.view(char_emb.shape[0] * char_emb.shape[1], char_emb.shape[2], char_emb.shape[3])
-        # char_emb shape: (batch_size * sequence_length, word_length, char_embedding_dim)
-
         char_emb = self.char_embedder(batch_char_seq)
         word_emb = self.word_embedder(batch_word_seq)
-        # conv_char_emb shape: (batch_size * sequence_length, output_char_embedding_dim)
-
-        # conv_char_emb.unsqueeze_(1)
-        # conv_char_emb = conv_char_emb.view(batch_size, -1, conv_char_emb.shape[2])
-        # conv_char_emb shape: (batch_size, sequence_length, output_char_embedding_dim)
-
         # Apply highway network
         merged_emb = self.highway_net(torch.cat([char_emb, word_emb], dim=2))
         # Step 3: Contextual embedding layer
