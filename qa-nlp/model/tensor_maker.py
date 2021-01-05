@@ -8,11 +8,9 @@ from typing import List, Tuple
 class TensorMaker:
     def __init__(self,
                  word_to_idx: Dict[str, int],
-                 char_to_idx: Dict[str, int],
-                 device: torch.device):
+                 char_to_idx: Dict[str, int]):
         self.word_to_idx = word_to_idx
         self.char_to_idx = char_to_idx
-        self.device = device
 
     def get_tensor(self, sentences: Tuple[List[str]]) -> (torch.LongTensor, torch.LongTensor, torch.IntTensor):
         # Find max length of a sentence (number of words) in sentences
@@ -33,6 +31,6 @@ class TensorMaker:
                     for k in range(len(sentences[i][j])):  # loop over chars in current word
                         char_tensor[i, j, k] = self.char_to_idx.get(sentences[i][j][k], self.char_to_idx[UNK])
 
-        return torch.cuda.LongTensor(word_tensor, device=self.device), \
-            torch.cuda.LongTensor(char_tensor, device=self.device), \
-            torch.cuda.IntTensor(lengths, device=self.device)
+        return torch.LongTensor(word_tensor), \
+            torch.LongTensor(char_tensor), \
+            torch.IntTensor(lengths)
