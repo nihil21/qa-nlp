@@ -99,10 +99,9 @@ class BiDAF(nn.Module):
         # Step 5: Modelling layer
         m, _ = self.mod_rnn(g)  # (bs, t, 2d)
         # Step 6: Output layer
-        input_soft = self.w_p_start(torch.cat([g, m], dim=-1))
-        p_start = F.softmax(input_soft, dim=1)  # (bs, t)
+        p_start = F.softmax(self.w_p_start(torch.cat([g, m], dim=-1)).squeeze(2), dim=1)  # (bs, t)
         m_2, _ = self.out_rnn(m)  # (bs, t, 2d)
-        p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)), dim=1)  # (bs, t)
+        p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)).squeeze(2), dim=1)  # (bs, t)
         return p_start, p_end
 
 # IDEAS:
