@@ -1,7 +1,8 @@
 import torch
 
 
-def bidaf_loss(p_start, p_end, y_start, y_end):
+def bidaf_loss(p_start: torch.FloatTensor, p_end: torch.FloatTensor,
+               y_start: torch.LongTensor, y_end: torch.LongTensor) -> torch.FloatTensor:
     bs = p_start.size(0)
     # Retrieve the probability of the correct start and end indexes
     p_true_start = torch.gather(p_start, 1, y_start.unsqueeze(1))  # equivalent to p_start[y_start]

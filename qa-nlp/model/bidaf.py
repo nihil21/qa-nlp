@@ -11,32 +11,32 @@ class BiDAF(nn.Module):
 
     def __init__(self,
                  char_embedder: CharEmbedder,
-                 word_embedder: WordEmbedder,
+                 train_word_embedder: WordEmbedder,
+                 eval_word_embedder: WordEmbedder,
                  use_dropout: Optional[bool] = False):
         super(BiDAF, self).__init__()
 
-        # char_emb_dim = embedder.char_one_hot_encoder.encoding_dimension
-        # word_emb_dim = embedder.word_embedding_dim
-        self.char_embedder = char_embedder
-        self.word_embedder = word_embedder
-        self.d = char_embedder.char_emb_dim + word_embedder.word_emb_dim
-
         # Step 1 & 2: Character and Word embedding
-        # self.embedder = embedder
-        # self.character_embedder = CharacterEmbedder()
-
+        self.char_embedder = char_embedder
+        self.train_word_embedder = train_word_embedder
+        self.eval_word_embedder = eval_word_embedder
+        self.d = char_embedder.char_emb_dim + train_word_embedder.word_emb_dim
         # Highway network to process character + word concatenated embeddings
         self.highway_net = ConvolutionalHighwayNetwork(input_embedding_dim=100)
+
         # Step 3: Contextual embedding layer
         self.ctx_rnn = nn.GRU(input_size=self.d, hidden_size=self.d, bidirectional=True, batch_first=True,
                               dropout=0.2 if use_dropout else 0)  # shared between context and query
+
         # Step 4: Attention flow
         self.w_s = nn.Linear(in_features=6 * self.d, out_features=1, bias=False)
+
         # Step 5: Modelling layer
         # bidirectional = True -> concat output
         # num_layers = 2 -> average output
         self.mod_rnn = nn.GRU(input_size=8 * self.d, hidden_size=self.d, bidirectional=True, num_layers=2,
                               batch_first=True, dropout=0.2 if use_dropout else 0)
+
         # Step 6: Output layer
         self.w_p_start = nn.Linear(in_features=10 * self.d, out_features=1, bias=False)
         self.out_rnn = nn.GRU(input_size=2 * self.d, hidden_size=self.d, bidirectional=True, batch_first=True,
@@ -46,7 +46,8 @@ class BiDAF(nn.Module):
     def _get_contextual_embedding(self, batch_word_seq: torch.LongTensor, batch_char_seq: torch.LongTensor):
         # Step 1 & 2: Word and Character embedding
         char_emb = self.char_embedder(batch_char_seq)
-        word_emb = self.word_embedder(batch_word_seq)
+        word_emb = self.train_word_embedder(batch_word_seq) if self.training \
+            else self.eval_word_embedder(batch_word_seq)  # word embedding depends on training/eval phase
         # Apply highway network
         merged_emb = self.highway_net(torch.cat([char_emb, word_emb], dim=2))
         # Step 3: Contextual embedding layer
@@ -87,8 +88,3 @@ class BiDAF(nn.Module):
         m_2, _ = self.out_rnn(m)  # (bs, t, 2d)
         p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)).squeeze(2), dim=1)  # (bs, t)
         return p_start, p_end
-
-# IDEAS:
-# 1. Use NN for g
-# 2. Create connection between p_start and p_end
-# 3. Add a constraint to take into account that index(max(p_end)) > index(max(p_start)) (in the loss or in point 2)
