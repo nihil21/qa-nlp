@@ -12,7 +12,6 @@ class BiDAF(nn.Module):
     def __init__(self,
                  char_embedder: CharEmbedder,
                  word_embedder: WordEmbedder,
-                 # embedder: Embedder,
                  use_dropout: Optional[bool] = False):
         super(BiDAF, self).__init__()
 
@@ -27,7 +26,7 @@ class BiDAF(nn.Module):
         # self.character_embedder = CharacterEmbedder()
 
         # Highway network to process character + word concatenated embeddings
-        self.highway_net = ConvolutionalHighwayNetwork(input_embedding_dim= 100)
+        self.highway_net = ConvolutionalHighwayNetwork(input_embedding_dim=100)
         # Step 3: Contextual embedding layer
         self.ctx_rnn = nn.GRU(input_size=self.d, hidden_size=self.d, bidirectional=True, batch_first=True,
                               dropout=0.2 if use_dropout else 0)  # shared between context and query

@@ -44,7 +44,7 @@ class ConvolutionalHighwayNetwork(nn.Module):
 
         t_activation = self.gate1(x)
         t = torch.sigmoid(torch.mean(t_activation, dim=2))
-        t.unsqueeze_(3)
+        t = t.unsqueeze(3)
 
         y = F.relu((1 - t) * x + t * h)
 
@@ -52,10 +52,10 @@ class ConvolutionalHighwayNetwork(nn.Module):
 
         t_activation = self.gate2(y)
         t = torch.sigmoid(torch.mean(t_activation, dim=2))
-        t.unsqueeze_(3)
+        t = t.unsqueeze(3)
 
         output = F.relu((1 - t) * y + t * h)
-        output.squeeze_(1)
+        output = output.squeeze(1)
 
         # (batch_size, word_length, input_embedding_dim)
         return output

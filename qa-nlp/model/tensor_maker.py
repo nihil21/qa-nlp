@@ -18,7 +18,7 @@ class TensorMaker:
         # Find max length of a sentence (number of words) in sentences
         max_sentence_len = max(map(len, sentences))
         # Find max length of a word (number of chars) in sentences
-        max_word_len = max([max(map(len, sentence)) for sentence in sentences])
+        max_word_len = max([max(map(len, sentence)) for sentence in sentences if len(sentence) > 0])
         # Prepare word and char tensors
         word_tensor = np.zeros((len(sentences), max_sentence_len))
         char_tensor = np.zeros((len(sentences), max_sentence_len, max_word_len))
