@@ -13,8 +13,11 @@ class BiDAF(nn.Module):
                  char_embedder: CharEmbedder,
                  train_word_embedder: WordEmbedder,
                  eval_word_embedder: WordEmbedder,
+                 use_constraint: Optional[bool] = False,
                  use_dropout: Optional[bool] = False):
         super(BiDAF, self).__init__()
+
+        self.use_constraint = use_constraint
 
         # Step 1 & 2: Character and Word embedding
         self.char_embedder = char_embedder
@@ -39,8 +42,11 @@ class BiDAF(nn.Module):
 
         # Step 6: Output layer
         self.w_p_start = nn.Linear(in_features=10 * self.d, out_features=1, bias=False)
-        self.out_rnn = nn.GRU(input_size=2 * self.d, hidden_size=self.d, bidirectional=True, batch_first=True,
-                              dropout=0.2 if use_dropout else 0)
+        # If specified, concatenate p_start with RNN input to impose constraint -> 2d + 1 input size
+        self.p_end_rnn = nn.GRU(input_size=2 * self.d + 1, hidden_size=self.d, bidirectional=True, batch_first=True,
+                                dropout=0.2 if use_dropout else 0) \
+            if use_constraint else nn.GRU(input_size=2 * self.d, hidden_size=self.d, bidirectional=True,
+                                          batch_first=True, dropout=0.2 if use_dropout else 0)
         self.w_p_end = nn.Linear(in_features=10 * self.d, out_features=1, bias=False)
 
     def _get_contextual_embedding(self, batch_word_seq: torch.LongTensor, batch_char_seq: torch.LongTensor):
@@ -84,7 +90,9 @@ class BiDAF(nn.Module):
         # Step 5: Modelling layer
         m, _ = self.mod_rnn(g)  # (bs, t, 2d)
         # Step 6: Output layer
-        p_start = F.softmax(self.w_p_start(torch.cat([g, m], dim=-1)).squeeze(2), dim=1)  # (bs, t)
-        m_2, _ = self.out_rnn(m)  # (bs, t, 2d)
-        p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)).squeeze(2), dim=1)  # (bs, t)
-        return p_start, p_end
+        p_start = F.softmax(self.w_p_start(torch.cat([g, m], dim=-1)), dim=1)  # (bs, t)
+        # If specified, concatenate p_start with RNN input to impose constraint
+        m_2, _ = self.p_end_rnn(torch.cat([m, p_start], dim=-1)) \
+            if self.use_constraint else self.p_end_rnn(m)  # (bs, t, 2d)
+        p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)), dim=1)  # (bs, t)
+        return p_start.squeeze(2), p_end.squeeze(2)
