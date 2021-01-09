@@ -7,11 +7,11 @@ from typing import Optional
 class CharEmbedder(nn.Module):
     def __init__(self,
                  init_emb: torch.Tensor,
-                 out_char_emb_dim: Optional[int] = 300,
-                 hidden_dim: Optional[int] = 400,
+                 out_char_emb_dim: Optional[int] = 50,
+                 hidden_dim: Optional[int] = 64,
                  input_channels: Optional[int] = 1,
-                 output_channels: Optional[int] = 600,
-                 kernel_height: Optional[int] = 3,
+                 output_channels: Optional[int] = 100,
+                 kernel_height: Optional[int] = 5,
                  trainable: Optional[bool] = False):
         super(CharEmbedder, self).__init__()
 
