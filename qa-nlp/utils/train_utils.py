@@ -36,6 +36,8 @@ def train(model: BiDAF,
     loss_data = []
     distance_start = 0
     distance_end = 0
+    exact_scores_total = 0
+    f1_scores_total = 0
     total = 0
     flag = 0
 
@@ -94,14 +96,16 @@ def train(model: BiDAF,
         loss_data.append(loss.item())
         distance_start += start_dist.item()
         distance_end += end_dist.item()
+        exact_scores_total += sum(exact_scores)
+        f1_scores_total += sum(f1_scores)
         total += total_batch
 
-        if flag == 0:
-            print(f'Start (p): {p_start[0].item()}, End (p): {p_end[0].item()}, '
-                  f'Start (T): {labels_start[0].item()}, End (T): {labels_end[0].item()}')
-            flag += 1
+    if flag == 0:
+        print(
+            f'Start_pred: {p_start[0].item()}, End_pred: {p_end[0].item()}, Start_true: {labels_start[0].item()}, End_true: {labels_end[0].item()}')
+        flag += 1
 
-    return mean(loss_data), distance_start // total, distance_end // total
+    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
 
 
 # Evaluate function util
@@ -115,6 +119,8 @@ def evaluate(model: BiDAF,
     loss_data = []
     distance_start = 0
     distance_end = 0
+    exact_scores_total = 0
+    f1_scores_total = 0
     total = 0
     flag = 0
 
@@ -159,6 +165,8 @@ def evaluate(model: BiDAF,
             loss_data.append(loss.item())
             distance_start += start_dist.item()
             distance_end += end_dist.item()
+            exact_scores_total += sum(exact_scores)
+            f1_scores_total += sum(f1_scores)
             total += total_batch
 
             if flag == 0:
@@ -166,7 +174,7 @@ def evaluate(model: BiDAF,
                       f'Start (T): {labels_start[0].item()}, End (T): {labels_end[0].item()}')
                 flag += 1
 
-    return mean(loss_data), distance_start // total, distance_end // total
+    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
 
 
 # Training loop function util
