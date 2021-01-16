@@ -6,6 +6,7 @@ import numpy as np
 from time import time
 from tqdm.notebook import tqdm
 from itertools import zip_longest
+import collections
 from typing import Callable, List, Tuple, Dict, Optional
 
 # Lambda for computing the mean of a list
@@ -21,6 +22,39 @@ to_list_of_tuples: Callable[[Tuple[List]], List[Tuple]] = lambda tuple_of_lists:
 # tuples of empty lists are appended)
 batch_iteration: Callable[[List[Tuple]], zip] = lambda data, batch_size: \
     zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
+
+
+def compute_f1(true_answer, predicted_answer):
+    common = collections.Counter(true_answer) & collections.Counter(predicted_answer)
+
+    num_same = sum(common.values())
+
+    if num_same == 0:
+        return 0
+
+    precision = 1.0 * num_same / len(predicted_answer)
+    recall = 1.0 * num_same / len(true_answer)
+    f1 = (2 * precision * recall) / (precision + recall)
+
+    return f1
+
+
+def get_raw_scores(context: Tuple[List[str]],
+                   label_start: List[int],
+                   label_end: List[int],
+                   p_start: List[int],
+                   p_end: List[int]):
+    exact_scores = []
+    f1_scores = []
+
+    for i, c in enumerate(context):
+        true_answer = c[label_start[i]:label_end[i]]
+        predicted_answer = c[p_start[i]:p_end[i]]
+
+        exact_scores.append(int(true_answer == predicted_answer))
+        f1_scores.append(compute_f1(true_answer, predicted_answer))
+
+    return exact_scores, f1_scores
 
 
 # Train function util
@@ -92,6 +126,8 @@ def train(model: BiDAF,
         start_dist = torch.abs(p_start - labels_start).sum()
         end_dist = torch.abs(p_end - labels_end).sum()
 
+        exact_scores, f1_scores = get_raw_scores(batch_context, labels_start, labels_end, p_start, p_end)
+
         # Update history
         loss_data.append(loss.item())
         distance_start += start_dist.item()
@@ -160,6 +196,8 @@ def evaluate(model: BiDAF,
             p_end = torch.argmax(p_soft_end, dim=1)
             start_dist = torch.abs(p_start - labels_start).sum()
             end_dist = torch.abs(p_end - labels_end).sum()
+
+            exact_scores, f1_scores = get_raw_scores(batch_context, labels_start, labels_end, p_start, p_end)
 
             # Update history
             loss_data.append(loss.item())
