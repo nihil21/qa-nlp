@@ -241,9 +241,13 @@ def training_loop(model: BiDAF,
     history = {'loss': [],
                'distance_start': [],
                'distance_end': [],
+               'exact_score': [],
+               'f1_score': [],
                'val_loss': [],
                'val_distance_start': [],
-               'val_distance_end': []}
+               'val_distance_end': [],
+               'val_exact_score': [],
+               'val_f1_score': []}
 
     # Initialize variables for early stopping
     min_val_loss = np.inf
@@ -261,16 +265,21 @@ def training_loop(model: BiDAF,
         random.shuffle(train_data)
 
         start = time()
-        train_loss, train_distance_start, train_distance_end = train(model, train_data, batch_size, criterion,
+        train_loss, train_distance_start, train_distance_end, exact_score, f1_score = train(model, train_data, batch_size, criterion,
                                                                      optimizer, train_tensor_maker, verbose, scaler)
         end = time()
 
         history['loss'].append(train_loss)
         history['distance_start'].append(train_distance_start)
         history['distance_end'].append(train_distance_end)
+        history['exact_score'].append(exact_score)
+        history['f1_score'].append(f1_score)
+
         if verbose:
             print(f'\tLoss: {train_loss:.5f} - Distance start: {train_distance_start:d} - '
-                  f'Distance end: {train_distance_end:d} [Time elapsed: {end - start:.2f} s]')
+                  f'Distance end: {train_distance_end:d}'
+                  f'exact_score: {exact_score:.2f} f1_score: {f1_score:.2f}' 
+                  f'[Time elapsed: {end - start:.2f} s]')
 
         # Do validation if required
         if val_data and val_tensor_maker:
@@ -281,16 +290,20 @@ def training_loop(model: BiDAF,
             random.shuffle(val_data)
 
             start = time()
-            val_loss, val_distance_start, val_distance_end = evaluate(model, val_data, batch_size, criterion,
+            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model, val_data, batch_size, criterion,
                                                                       val_tensor_maker, verbose)
             end = time()
 
             history['val_loss'].append(val_loss)
             history['val_distance_start'].append(val_distance_start)
             history['val_distance_end'].append(val_distance_end)
+            history['val_exact_score'].append(val_exact_score)
+            history['val_f1_score'].append(val_f1_score)
             if verbose:
                 print(f'\tValidation loss: {val_loss:.5f} - Distance start: {val_distance_start:.2f} - '
-                      f'Distance end: {val_distance_end:.2f} [Time elapsed: {end - start:.2f} s]')
+                      f'Distance end: {val_distance_end:.2f} '
+                      f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}' 
+                      f'[Time elapsed: {end - start:.2f} s]')
 
             # Deactivate eval mode
             model.train()
