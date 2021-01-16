@@ -1,4 +1,6 @@
 import torch
+
+from model import tensor_maker
 from model.bidaf import BiDAF
 from model.tensor_maker import TensorMaker
 import random
@@ -8,6 +10,7 @@ from tqdm.notebook import tqdm
 from itertools import zip_longest
 import collections
 from typing import Callable, List, Tuple, Dict, Optional
+import json
 
 # Lambda for computing the mean of a list
 mean: Callable[[List[float]], float] = lambda l: sum(l) / len(l)
@@ -334,3 +337,50 @@ def training_loop(model: BiDAF,
             lr_scheduler.step()
 
     return history
+
+
+def generate_evaluation_json(model: BiDAF,
+                             evaluation_data: List[Tuple[List[str], List[str], Tuple[int, int]]],
+                             id_list: List[str],
+                             filename: str):
+    predictions = {}
+
+    with torch.no_grad():
+        batch_size = 32
+
+        # Create batch iterator
+        batch_iter = batch_iteration(evaluation_data, batch_size)
+        steps = len(evaluation_data) // batch_size if len(evaluation_data) % batch_size == 0 else len(
+            evaluation_data) // batch_size + 1
+
+        batch_iter = tqdm(batch_iter, total=steps, leave=False)
+
+        for i, batch in enumerate(batch_iter):
+            # Extract samples
+            batch_context, batch_query, _ = to_tuple_of_lists(batch)
+
+            # Filter valid samples in batches (in case of incomplete ones)
+            batch_context: Tuple[List[str]] = tuple([c for c in batch_context if len(c) > 0])
+            batch_query: Tuple[List[str]] = tuple([q for q in batch_query if len(q) > 0])
+
+            context_word_tensor, context_char_tensor, context_lengths = tensor_maker.get_tensor(batch_context)
+            query_word_tensor, query_char_tensor, query_lengths = tensor_maker.get_tensor(batch_query)
+
+            # Make prediction
+            p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
+                                             query_word_tensor, query_char_tensor)
+
+            # Compute distance metric
+            p_start = torch.argmax(p_soft_start, dim=1)
+            p_end = torch.argmax(p_soft_end, dim=1)
+
+            for j in range(batch_size):
+                start = p_start[j].item()
+                end = p_end[j].item()
+
+                answer = batch_context[j][start:end]
+                id = id_list[i * batch_size + j]
+                predictions[id] = answer
+
+    with open(filename, "w") as f:
+        f.write(json.dumps(predictions))
