@@ -276,8 +276,8 @@ def training_loop(model: BiDAF,
         history['f1_score'].append(f1_score)
 
         if verbose:
-            print(f'\tLoss: {train_loss:.5f} - Distance start: {train_distance_start:d} - '
-                  f'Distance end: {train_distance_end:d}'
+            print(f'\tLoss: {train_loss:.5f} - Distance start: {train_distance_start:.2f} - '
+                  f'Distance end: {train_distance_end:.2f}'
                   f'exact_score: {exact_score:.2f} f1_score: {f1_score:.2f}' 
                   f'[Time elapsed: {end - start:.2f} s]')
 
