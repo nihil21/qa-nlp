@@ -5,7 +5,7 @@ from typing import Tuple
 
 
 class ConvolutionalHighwayNetwork(nn.Module):
-    def __init__(self,
+    """def __init__(self,
                  kernel: Tuple[int] = (5, 5),
                  input_embedding_dim: int = 600,
                  ):
@@ -58,4 +58,22 @@ class ConvolutionalHighwayNetwork(nn.Module):
         output = output.squeeze(1)
 
         # (batch_size, word_length, input_embedding_dim)
-        return output
+        return output"""
+
+    def __init__(self, input_embedding_dim, n_layers=2, act=F.relu):
+        super(ConvolutionalHighwayNetwork, self).__init__()
+        self.n_layers = n_layers
+        self.act = act
+
+        self.normal_layer = nn.ModuleList([nn.Linear(input_embedding_dim, input_embedding_dim)
+                                           for _ in range(n_layers)])
+        self.gate_layer = nn.ModuleList([nn.Linear(input_embedding_dim, input_embedding_dim)
+                                         for _ in range(n_layers)])
+
+    def forward(self, x):
+        for i in range(self.n_layers):
+            normal_layer_ret = self.act(self.normal_layer[i](x))
+            gate = F.sigmoid(self.gate_layer[i](x))
+
+            x = gate * normal_layer_ret + (1 - gate) * x
+        return x
