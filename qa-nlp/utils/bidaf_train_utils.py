@@ -1,63 +1,13 @@
 import torch
-
-from model import tensor_maker
-from model.bidaf import BiDAF
 from model.tensor_maker import TensorMaker
+from model.bidaf import BiDAF
+from utils.squad_utils import mean, batch_iteration, to_tuple_of_lists, get_raw_scores
 import random
 import numpy as np
 from time import time
 from tqdm.notebook import tqdm
-from itertools import zip_longest
-import collections
 from typing import Callable, List, Tuple, Dict, Optional
 import json
-
-# Lambda for computing the mean of a list
-mean: Callable[[List[float]], float] = lambda l: sum(l) / len(l)
-
-# Lambda for transforming a list of tuples into a tuple of lists
-to_tuple_of_lists: Callable[[List[Tuple]], Tuple[List]] = lambda list_of_tuples: tuple(map(list, zip(*list_of_tuples)))
-
-# Lambda for transforming a tuple of lists into a list of tuples
-to_list_of_tuples: Callable[[Tuple[List]], List[Tuple]] = lambda tuple_of_lists: list(zip(*tuple_of_lists))
-
-# Lambda for iterating with batches (if the length of the sequences does not match with the batch size,
-# tuples of empty lists are appended)
-batch_iteration: Callable[[List[Tuple]], zip] = lambda data, batch_size: \
-    zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
-
-
-def compute_f1(true_answer, predicted_answer):
-    common = collections.Counter(true_answer) & collections.Counter(predicted_answer)
-
-    num_same = sum(common.values())
-
-    if num_same == 0:
-        return 0
-
-    precision = 1.0 * num_same / len(predicted_answer)
-    recall = 1.0 * num_same / len(true_answer)
-    f1 = (2 * precision * recall) / (precision + recall)
-
-    return f1
-
-
-def get_raw_scores(context: Tuple[List[str]],
-                   label_start: List[int],
-                   label_end: List[int],
-                   p_start: List[int],
-                   p_end: List[int]):
-    exact_scores = []
-    f1_scores = []
-
-    for i, c in enumerate(context):
-        true_answer = c[label_start[i]:label_end[i]]
-        predicted_answer = c[p_start[i]:p_end[i]]
-
-        exact_scores.append(int(true_answer == predicted_answer))
-        f1_scores.append(compute_f1(true_answer, predicted_answer))
-
-    return exact_scores, f1_scores
 
 
 # Train function util
@@ -293,8 +243,12 @@ def training_loop(model: BiDAF,
             random.shuffle(val_data)
 
             start = time()
-            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model, val_data, batch_size, criterion,
-                                                                      val_tensor_maker, verbose)
+            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model,
+                                                                                                     val_data,
+                                                                                                     batch_size,
+                                                                                                     criterion,
+                                                                                                     val_tensor_maker,
+                                                                                                     verbose)
             end = time()
 
             history['val_loss'].append(val_loss)
@@ -342,7 +296,8 @@ def training_loop(model: BiDAF,
 def generate_evaluation_json(model: BiDAF,
                              evaluation_data: List[Tuple[List[str], List[str], Tuple[int, int]]],
                              id_list: List[str],
-                             filename: str):
+                             filename: str,
+                             tensor_maker: TensorMaker):
     predictions = {}
 
     with torch.no_grad():
