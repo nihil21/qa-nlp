@@ -45,7 +45,7 @@ def train(model: AlbertForQuestionAnswering,
         labels_start, labels_end = to_tuple_of_lists(batch_label)
 
         # Tokenize context and query
-        token_dict = tokenizer(batch_query, batch_context, padding=True)
+        token_dict = tokenizer(batch_query, batch_context, padding=True, truncation='only_second')
 
         total_batch = len(batch_context)
 
@@ -143,7 +143,7 @@ def evaluate(model: AlbertForQuestionAnswering,
             labels_start, labels_end = to_tuple_of_lists(batch_label)
 
             # Tokenize context and query
-            token_dict = tokenizer(batch_query, batch_context, padding=True)
+            token_dict = tokenizer(batch_query, batch_context, padding=True, truncation='only_second')
 
             total_batch = len(batch_context)
 

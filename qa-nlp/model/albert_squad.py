@@ -16,7 +16,7 @@ class AlbertForQuestionAnswering(nn.Module):
         self.fc = nn.Linear(self.albert.config.hidden_size, 2)
 
     def forward(self, input_ids, token_type_ids=None, attention_mask=None):
-        sequence_output = self.xlnet(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)[0]
+        sequence_output = self.albert(input_ids, token_type_ids=token_type_ids, attention_mask=attention_mask)[0]
 
         logits = self.fc(sequence_output)
         start_logits, end_logits = logits.split(1, dim=-1)
