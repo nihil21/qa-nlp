@@ -10,11 +10,10 @@ class WordEmbedder(nn.Module):
                  trainable: Optional[bool] = False):
         super(WordEmbedder, self).__init__()
         # Create embedding layer
-        self.embedding = nn.Embedding(*init_emb.shape)
-        if init_emb is not None:  # initialize weights to the embeddings provided
-            self.embedding.load_state_dict({'weight': init_emb})
-            self.embedding.weight.requires_grad = trainable
+        self.embedding = nn.Embedding.from_pretrained(init_emb, freeze = not(trainable))
         self.word_emb_dim = init_emb.shape[1]
 
     def forward(self, x: torch.LongTensor) -> torch.FloatTensor:
+        #print("before embedding:\n", x.shape)
+        #print("after embedding:\n", self.embedding(x).shape)
         return self.embedding(x)

@@ -25,8 +25,9 @@ class BiDAF(nn.Module):
         self.train_word_embedder = train_word_embedder
         self.eval_word_embedder = eval_word_embedder
         self.d = char_embedder.char_emb_dim + train_word_embedder.word_emb_dim
+
         # Highway network to process character + word concatenated embeddings
-        self.highway_net = ConvolutionalHighwayNetwork(input_embedding_dim=100)
+        self.highway_net = ConvolutionalHighwayNetwork(input_embedding_dim=self.d)
 
         # Step 3: Contextual embedding layer
         self.ctx_rnn = nn.GRU(input_size=self.d, hidden_size=self.d, bidirectional=True, batch_first=True,

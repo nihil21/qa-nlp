@@ -61,8 +61,8 @@ def get_raw_scores(context: Tuple[List[str]],
     f1_scores = []
 
     for i, c in enumerate(context):
-        true_answer = c[label_start[i]:label_end[i]]
-        predicted_answer = c[p_start[i]:p_end[i]]
+        true_answer = c[label_start[i]:label_end[i] +1 ]
+        predicted_answer = c[p_start[i]:p_end[i] +1 ]
 
         exact_scores.append(int(true_answer == predicted_answer))
         f1_scores.append(compute_f1(true_answer, predicted_answer))

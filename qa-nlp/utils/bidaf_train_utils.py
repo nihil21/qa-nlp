@@ -1,14 +1,15 @@
 import torch
-from model.tensor_maker import TensorMaker
+
+from model import tensor_maker
 from model.bidaf import BiDAF
-from utils.squad_utils import mean, batch_iteration, to_tuple_of_lists, get_raw_scores
+from model.tensor_maker import TensorMaker
 import random
 import numpy as np
 from time import time
 from tqdm.notebook import tqdm
 from typing import Callable, List, Tuple, Dict, Optional
 import json
-
+from utils.squad_utils import get_raw_scores, mean, to_tuple_of_lists, batch_iteration
 
 # Train function util
 def train(model: BiDAF,
@@ -33,7 +34,9 @@ def train(model: BiDAF,
     steps = len(data) // batch_size if len(data) % batch_size == 0 else len(data) // batch_size + 1
     if verbose:
         batch_iter = tqdm(batch_iter, total=steps, leave=False)
+
     for batch in batch_iter:
+
         # Extract samples
         batch_context, batch_query, batch_label = to_tuple_of_lists(batch)
 
@@ -66,16 +69,24 @@ def train(model: BiDAF,
         else:
             # Make prediction
             optimizer.zero_grad()
+
             p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
                                              query_word_tensor, query_char_tensor)
+
             loss = criterion(p_soft_start, p_soft_end, labels_start, labels_end)
             # Backpropagation
+
             loss.backward()
             optimizer.step()
 
         # Compute distance metric
         p_start = torch.argmax(p_soft_start, dim=1)
-        p_end = torch.argmax(p_soft_end, dim=1)
+
+        p_end = []
+        for i,batch in enumerate(p_soft_end):
+            p_end.append(torch.argmax(batch[p_start[i]:]) + p_start[i])
+        p_end = torch.cuda.LongTensor(p_end)
+
         start_dist = torch.abs(p_start - labels_start).sum()
         end_dist = torch.abs(p_end - labels_end).sum()
 
@@ -88,6 +99,8 @@ def train(model: BiDAF,
         exact_scores_total += sum(exact_scores)
         f1_scores_total += sum(f1_scores)
         total += total_batch
+
+
 
     if flag == 0:
         print(
@@ -105,6 +118,7 @@ def evaluate(model: BiDAF,
                                  torch.FloatTensor],
              tensor_maker: TensorMaker,
              verbose: Optional[bool] = False) -> (float, int, int):
+
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -146,7 +160,12 @@ def evaluate(model: BiDAF,
 
             # Compute distance metric
             p_start = torch.argmax(p_soft_start, dim=1)
-            p_end = torch.argmax(p_soft_end, dim=1)
+
+            p_end = []
+            for i, batch in enumerate(p_soft_end):
+                p_end.append(torch.argmax(batch[p_start[i]:]) + p_start[i])
+            p_end = torch.cuda.LongTensor(p_end)
+
             start_dist = torch.abs(p_start - labels_start).sum()
             end_dist = torch.abs(p_end - labels_end).sum()
 
@@ -243,12 +262,8 @@ def training_loop(model: BiDAF,
             random.shuffle(val_data)
 
             start = time()
-            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model,
-                                                                                                     val_data,
-                                                                                                     batch_size,
-                                                                                                     criterion,
-                                                                                                     val_tensor_maker,
-                                                                                                     verbose)
+            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model, val_data, batch_size, criterion,
+                                                                      val_tensor_maker, verbose)
             end = time()
 
             history['val_loss'].append(val_loss)
@@ -296,8 +311,7 @@ def training_loop(model: BiDAF,
 def generate_evaluation_json(model: BiDAF,
                              evaluation_data: List[Tuple[List[str], List[str], Tuple[int, int]]],
                              id_list: List[str],
-                             filename: str,
-                             tensor_maker: TensorMaker):
+                             filename: str):
     predictions = {}
 
     with torch.no_grad():

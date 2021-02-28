@@ -5,7 +5,8 @@ from typing import Optional
 
 
 class CharEmbedder(nn.Module):
-    """def __init__(self,
+
+    def __init__(self,
                  init_emb: torch.Tensor,
                  out_char_emb_dim: Optional[int] = 50,
                  hidden_dim: Optional[int] = 64,
@@ -16,10 +17,9 @@ class CharEmbedder(nn.Module):
         super(CharEmbedder, self).__init__()
 
         # Create embedding layer (one extra row for padding)
-        self.embedding = nn.Embedding(*init_emb.shape)
-        if init_emb is not None:  # initialize weights to the embeddings provided
-            self.embedding.load_state_dict({'weight': init_emb})
-            self.embedding.weight.requires_grad = trainable
+        # Create embedding layer
+        self.embedding = nn.Embedding.from_pretrained(init_emb, freeze = not(trainable))
+        self.word_emb_dim = init_emb.shape[1]
 
         input_char_embedding_dimension = init_emb.shape[1]
         self.conv_layer = nn.Conv2d(in_channels=input_channels,
@@ -55,24 +55,34 @@ class CharEmbedder(nn.Module):
 
         # (batch_size, out_char_emb_dim)
         x = x.unsqueeze(1)  # (batch_size, 1, out_char_emb_dim)
-        return x.view(bs, -1, x.shape[2])  # (batch_size, seq_len, out_char_emb_dim)"""
+        return x.view(bs, -1, x.shape[2])  # (batch_size, seq_len, out_char_emb_dim) """
+    '''
 
-    def __init__(self, args):
+    def __init__(self, c_embd_size, vocab_size_c, out_chs, filters):
+
         super(CharEmbedder, self).__init__()
-        self.embd_size = args.c_embd_size
-        self.embedding = nn.Embedding(args.vocab_size_c, args.c_embd_size)
+        self.embd_size = c_embd_size
+        self.embedding = nn.Embedding(vocab_size_c, c_embd_size, padding_idx=0)
         # nn.Conv1d(in_channels, out_channels, kernel_size, stride=1, padding=0, ...
-        self.conv = nn.ModuleList([nn.Conv2d(1, args.out_chs, (f[0], f[1])) for f in args.filters])
+        self.conv = nn.ModuleList([nn.Conv2d(1, out_chs, (f[0], f[1])) for f in filters])
         self.dropout = nn.Dropout(.2)
+        self.char_emb_dim = out_chs
+
+
+
 
     def forward(self, x):
+
         # x: (N, seq_len, word_len)
+        #print("before embedding:\n", x)
         input_shape = x.size()
         # bs = x.size(0)
         # seq_len = x.size(1)
         word_len = x.size(2)
         x = x.view(-1, word_len) # (N*seq_len, word_len)
         x = self.embedding(x) # (N*seq_len, word_len, c_embd_size)
+        #print("embedded:\n",x)
+
         x = x.view(*input_shape, -1) # (N, seq_len, word_len, c_embd_size)
         x = x.sum(2) # (N, seq_len, c_embd_size)
 
@@ -93,3 +103,5 @@ class CharEmbedder(nn.Module):
         x = self.dropout(x)
 
         return x
+    '''
+
