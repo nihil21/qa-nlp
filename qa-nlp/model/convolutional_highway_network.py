@@ -73,14 +73,11 @@ class ConvolutionalHighwayNetwork(nn.Module):
                                          for _ in range(n_layers)])
 
     def forward(self, x):
-
-
         for i in range(self.n_layers):
             normal_layer_ret = self.act(self.normal_layer[i](x))
             gate = torch.sigmoid(self.gate_layer[i](x))
 
             x = gate * normal_layer_ret + (1 - gate) * x
-
 
         return x
     '''

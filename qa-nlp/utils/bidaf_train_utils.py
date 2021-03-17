@@ -319,10 +319,6 @@ def generate_evaluation_json(model: BiDAF,
 
         # Create batch iterator
         batch_iter = batch_iteration(evaluation_data, batch_size)
-        steps = len(evaluation_data) // batch_size if len(evaluation_data) % batch_size == 0 else len(
-            evaluation_data) // batch_size + 1
-
-        batch_iter = tqdm(batch_iter, total=steps, leave=False)
 
         for i, batch in enumerate(batch_iter):
             # Extract samples
@@ -347,7 +343,7 @@ def generate_evaluation_json(model: BiDAF,
                 start = p_start[j].item()
                 end = p_end[j].item()
 
-                answer = batch_context[j][start:end]
+                answer = batch_context[j][start:end+1]
                 id = id_list[i * batch_size + j]
                 predictions[id] = answer
 

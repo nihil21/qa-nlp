@@ -55,11 +55,10 @@ class CharEmbedder(nn.Module):
 
         # (batch_size, out_char_emb_dim)
         x = x.unsqueeze(1)  # (batch_size, 1, out_char_emb_dim)
-        return x.view(bs, -1, x.shape[2])  # (batch_size, seq_len, out_char_emb_dim) """
-    '''
+        return x.view(bs, -1, x.shape[2])  # (batch_size, seq_len, out_char_emb_dim)
 
+"""
     def __init__(self, c_embd_size, vocab_size_c, out_chs, filters):
-
         super(CharEmbedder, self).__init__()
         self.embd_size = c_embd_size
         self.embedding = nn.Embedding(vocab_size_c, c_embd_size, padding_idx=0)
@@ -68,11 +67,7 @@ class CharEmbedder(nn.Module):
         self.dropout = nn.Dropout(.2)
         self.char_emb_dim = out_chs
 
-
-
-
     def forward(self, x):
-
         # x: (N, seq_len, word_len)
         #print("before embedding:\n", x)
         input_shape = x.size()
@@ -94,14 +89,20 @@ class CharEmbedder(nn.Module):
         x = [F.relu(conv(x)) for conv in self.conv] # (N, Cout, seq_len, c_embd_size-filter_w+1). stride == 1
         # [(N,Cout,Hout,Wout) -> [(N,Cout,Hout*Wout)] * len(filter_heights)
         # [(N, seq_len, c_embd_size-filter_w+1, Cout)] * len(filter_heights)
+
+        # bs, cout, seq_len, c_embd_size
+
         x = [xx.view((xx.size(0), xx.size(2), xx.size(3), xx.size(1))) for xx in x]
+
+        # bs, seq_len, c_embd_size, cout
+
         # maxpool like
         # [(N, seq_len, Cout)] * len(filter_heights)
         x = [torch.sum(xx, 2) for xx in x]
+
         # (N, seq_len, Cout==word_embd_size)
         x = torch.cat(x, 1)
         x = self.dropout(x)
 
         return x
-    '''
-
+"""
