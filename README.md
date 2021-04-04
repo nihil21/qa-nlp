@@ -1,5 +1,16 @@
 # qa-nlp
 
+In this project we have addressed the problem of Question Answering (QA) using the SQuAD dataset.
+We started from the vanilla Bi-Directional Attention Flow (BiDAF) model, and then we developed and
+tested several variants. 
+
+In particular, the best variant that we obtained comprises the following features: a
+non-learnable character embedding layer based on the one-hot encoding of the most frequent characters, a
+convolutional highway network, and a simple constraint on the output span. 
+
+While the baseline obtained
+an F1 score of 0.43, these changes allowed our best variant to reach an F1 score of 0.60.
+
 ## Authors
 * [Lorenzo Mario Amorosa](https://github.com/Lostefra)
 * [Andrea Espis](https://github.com/97andrea97)
