@@ -37,8 +37,8 @@ class ConvolutionalHighwayNetwork(nn.Module):
                                padding=(int(kernel[0] / 2), 0))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-
-        # (batch_size, word_length, input_embedding_dim) -> (batch_size, input_channel = 1, word_length, input_embedding_dim):
+        # (batch_size, word_length, input_embedding_dim) ->
+        # (batch_size, input_channel = 1, word_length, input_embedding_dim):
         x = x.unsqueeze(1)
 
         h = self.conv1(x)
@@ -60,24 +60,3 @@ class ConvolutionalHighwayNetwork(nn.Module):
 
         # (batch_size, word_length, input_embedding_dim)
         return output
-    '''
-
-    def __init__(self, input_embedding_dim, n_layers=2, act=F.relu):
-        super(ConvolutionalHighwayNetwork, self).__init__()
-        self.n_layers = n_layers
-        self.act = act
-
-        self.normal_layer = nn.ModuleList([nn.Linear(input_embedding_dim, input_embedding_dim)
-                                           for _ in range(n_layers)])
-        self.gate_layer = nn.ModuleList([nn.Linear(input_embedding_dim, input_embedding_dim)
-                                         for _ in range(n_layers)])
-
-    def forward(self, x):
-        for i in range(self.n_layers):
-            normal_layer_ret = self.act(self.normal_layer[i](x))
-            gate = torch.sigmoid(self.gate_layer[i](x))
-
-            x = gate * normal_layer_ret + (1 - gate) * x
-
-        return x
-    '''
