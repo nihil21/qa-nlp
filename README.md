@@ -1,5 +1,13 @@
 # qa-nlp
 
+## Authors
+* [Lorenzo Mario Amorosa](https://github.com/Lostefra)
+* [Andrea Espis](https://github.com/97andrea97)
+* [Mattia Orlandi](https://github.com/nihil21)
+* [Giacomo Pinardi](https://github.com/GiacomoPinardi)
+
+## Summary
+
 Question Answering (QA) task has gained significant popularity over the past years. The implementations
 of such systems have varied across the years, starting from knowledge base technologies to deep learning
 approaches based on recurrent neural networks, attention mechanisms and transformers.
