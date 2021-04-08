@@ -129,12 +129,12 @@ def main():
 
             for k in range(len(parsed_data[i]['paragraphs'][j]['qas'])):
                 question = parsed_data[i]['paragraphs'][j]['qas'][k]['question']
-                id = parsed_data[i]['paragraphs'][j]['qas'][k]['id']
+                idx = parsed_data[i]['paragraphs'][j]['qas'][k]['id']
 
                 dataset['paragraph_index'].append(paragraph_index)
                 dataset['context_index'].append(context_index)
                 dataset['question'].append(question)
-                dataset['id'].append(id)
+                dataset['id'].append(idx)
 
     df = pd.DataFrame.from_dict(dataset)
     id_list = df['id'].tolist()
