@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from typing import Dict
 from utils.squad_utils import UNK
-from typing import List, Tuple
+from typing import List, Sequence
 
 
 class TensorMaker:
@@ -14,7 +14,7 @@ class TensorMaker:
         self.char_to_idx = char_to_idx
         self.device = device
 
-    def get_tensor(self, sentences: Tuple[List[str]]) -> (torch.LongTensor, torch.LongTensor, torch.IntTensor):
+    def get_tensor(self, sentences: Sequence[List[str]]) -> (torch.LongTensor, torch.LongTensor, torch.IntTensor):
         # Find max length of a sentence (number of words) in sentences
         max_sentence_len = max(map(len, sentences))
         # Find max length of a word (number of chars) in sentences

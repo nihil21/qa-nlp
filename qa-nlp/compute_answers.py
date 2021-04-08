@@ -13,12 +13,9 @@ import torch
 # Natural language tools
 import nltk
 from nltk.tokenize import TreebankWordTokenizer
-import gensim.downloader as gloader
 
 # Import custom modules
 from model.bidaf import BiDAF
-from model.char_embedder import CharEmbedder
-from model.word_embedder import WordEmbedder
 from model.tensor_maker import TensorMaker
 
 # Other tools
@@ -34,8 +31,10 @@ DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # Lambda for transforming a list of tuples into a tuple of lists
 to_tuple_of_lists: Callable[[List[Tuple]], Tuple[List]] = lambda list_of_tuples: tuple(map(list, zip(*list_of_tuples)))
 
-# Lambda for iterating with batches (if the length of the sequences does not match with the batch size, tuples of empty lists are appended)
-batch_iteration: Callable[[List[Tuple]], zip] = lambda data, batch_size: zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
+# Lambda for iterating with batches
+# (if the length of the sequences does not match with the batch size, tuples of empty lists are appended)
+batch_iteration: Callable[[List[Tuple]], zip] = lambda data, batch_size: \
+    zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
 
 
 def tokenize_corpus(df: pd.DataFrame, context_list: List[str]):
@@ -74,7 +73,7 @@ def generate_evaluation_json(model: BiDAF,
 
             # Make prediction
             p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
-                                            query_word_tensor, query_char_tensor)
+                                             query_word_tensor, query_char_tensor)
 
             # Argmax
             p_start = torch.argmax(p_soft_start, dim=1)[0]
@@ -89,8 +88,8 @@ def generate_evaluation_json(model: BiDAF,
 
             answer = batch_context[0][start_char_idx:end_char_idx + 1]
 
-            id = id_list[i]
-            predictions[id] = answer
+            idx = id_list[i]
+            predictions[idx] = answer
  
     with open(filename, "w") as f:
         f.write(json.dumps(predictions))
@@ -147,25 +146,10 @@ def main():
     
     print('Done.')
     print('Loading model...')
-
-    # Import from pickle files
-    char_embedder: CharEmbedder = None
-    with open(os.path.join('best_model', 'char_emb2.pickle'), 'rb') as f:
-        char_embedder = pickle.load(f)
-    train_word_embedder: WordEmbedder = None
-    with open(os.path.join('best_model', 'train_word_embedder.pickle'), 'rb') as f:
-        train_word_embedder = pickle.load(f)
-    val_word_embedder: WordEmbedder = None
-    with open(os.path.join('best_model', 'val_word_embedder.pickle'), 'rb') as f:
-        val_word_embedder = pickle.load(f)
-
-    # Create model
-    model_bidaf = BiDAF(char_embedder, train_word_embedder, val_word_embedder, use_constraint=True, use_dropout=False).to(DEVICE)
-    # Load the model state
-    model_bidaf.load_state_dict(torch.load(os.path.join('best_model', 'bidaf_test.pt')))
-    model_bidaf.eval()
+    
+    # Load BiDAF
+    model = torch.load(os.path.join('best_model', 'bidaf.pt'))
     # Load tensor maker
-    tensor_maker = None
     with open(os.path.join('best_model', 'tensor_maker.pickle'), 'rb') as f:
         tensor_maker = pickle.load(f)
     
@@ -180,7 +164,7 @@ def main():
         evaluation_data.append((contexts[i], context_tokenized[i], query_tokenized[i]))
 
     # Generate answers
-    generate_evaluation_json(model_bidaf, tensor_maker, evaluation_data, spans_list, id_list, "predictions.json")
+    generate_evaluation_json(model, tensor_maker, evaluation_data, spans_list, id_list, "predictions.json")
     
     print('Success!')
 
