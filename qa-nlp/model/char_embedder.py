@@ -18,7 +18,7 @@ class CharEmbedder(nn.Module):
 
         # Create embedding layer (one extra row for padding)
         # Create embedding layer
-        self.embedding = nn.Embedding.from_pretrained(init_emb, freeze=not(trainable))
+        self.embedding = nn.Embedding.from_pretrained(init_emb, freeze=not trainable)
         self.word_emb_dim = init_emb.shape[1]
 
         input_char_embedding_dimension = init_emb.shape[1]

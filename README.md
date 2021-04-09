@@ -52,3 +52,8 @@ In this work we have trained our model using the Stanford Question Answering Dat
 from Rajpurkar et al. 2016.
 
 The models are implemented in PyTorch.
+
+## Usage
+To use the model to make predictions, it is sufficient to execute the script `compute_answers.py`, passing as argument the JSON file containing contexts and questions: it will produce as output a `predictions.json` file containing the predicted answers.
+
+To assess the quality of the predictions, run the script `evaluate.py` passing as arguments one JSON file containing contexts, questions and true answers, and one JSON file containing the predicted answers.
