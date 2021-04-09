@@ -1,6 +1,5 @@
 import torch
 
-from model import tensor_maker
 from model.bidaf import BiDAF
 from model.tensor_maker import TensorMaker
 import random
@@ -8,8 +7,8 @@ import numpy as np
 from time import time
 from tqdm.notebook import tqdm
 from typing import Callable, List, Tuple, Dict, Optional
-import json
 from utils.squad_utils import get_raw_scores, mean, to_tuple_of_lists, batch_iteration
+
 
 # Train function util
 def train(model: BiDAF,
@@ -27,7 +26,6 @@ def train(model: BiDAF,
     exact_scores_total = 0
     f1_scores_total = 0
     total = 0
-    flag = 0
 
     # Create batch iterator
     batch_iter = batch_iteration(data, batch_size)
@@ -38,7 +36,7 @@ def train(model: BiDAF,
     for batch in batch_iter:
 
         # Extract samples
-        batch_context, batch_query, batch_label = to_tuple_of_lists(batch)
+        batch_context, batch_query, batch_label = (to_tuple_of_lists(batch))
 
         # Filter valid samples in batches (in case of incomplete ones)
         batch_context: Tuple[List[str]] = tuple([c for c in batch_context if len(c) > 0])
@@ -83,8 +81,8 @@ def train(model: BiDAF,
         p_start = torch.argmax(p_soft_start, dim=1)
 
         p_end = []
-        for i,batch in enumerate(p_soft_end):
-            p_end.append(torch.argmax(batch[p_start[i]:]) + p_start[i])
+        for i, pred in enumerate(p_soft_end):
+            p_end.append(torch.argmax(pred[p_start[i]:]) + p_start[i])
         p_end = torch.cuda.LongTensor(p_end)
 
         start_dist = torch.abs(p_start - labels_start).sum()
@@ -100,14 +98,8 @@ def train(model: BiDAF,
         f1_scores_total += sum(f1_scores)
         total += total_batch
 
-
-
-    if flag == 0:
-        print(
-            f'Start_pred: {p_start[0].item()}, End_pred: {p_end[0].item()}, Start_true: {labels_start[0].item()}, End_true: {labels_end[0].item()}')
-        flag += 1
-
-    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
+    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, \
+        f1_scores_total / total
 
 
 # Evaluate function util
@@ -118,14 +110,12 @@ def evaluate(model: BiDAF,
                                  torch.FloatTensor],
              tensor_maker: TensorMaker,
              verbose: Optional[bool] = False) -> (float, int, int):
-
     loss_data = []
     distance_start = 0
     distance_end = 0
     exact_scores_total = 0
     f1_scores_total = 0
     total = 0
-    flag = 0
 
     with torch.no_grad():
         # Create batch iterator
@@ -162,8 +152,8 @@ def evaluate(model: BiDAF,
             p_start = torch.argmax(p_soft_start, dim=1)
 
             p_end = []
-            for i, batch in enumerate(p_soft_end):
-                p_end.append(torch.argmax(batch[p_start[i]:]) + p_start[i])
+            for i, pred in enumerate(p_soft_end):
+                p_end.append(torch.argmax(pred[p_start[i]:]) + p_start[i])
             p_end = torch.cuda.LongTensor(p_end)
 
             start_dist = torch.abs(p_start - labels_start).sum()
@@ -179,12 +169,8 @@ def evaluate(model: BiDAF,
             f1_scores_total += sum(f1_scores)
             total += total_batch
 
-            if flag == 0:
-                print(f'Start (p): {p_start[0].item()}, End (p): {p_end[0].item()}, '
-                      f'Start (T): {labels_start[0].item()}, End (T): {labels_end[0].item()}')
-                flag += 1
-
-    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
+    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, \
+        f1_scores_total / total
 
 
 # Training loop function util
@@ -237,8 +223,8 @@ def training_loop(model: BiDAF,
         random.shuffle(train_data)
 
         start = time()
-        train_loss, train_distance_start, train_distance_end, exact_score, f1_score = train(model, train_data, batch_size, criterion,
-                                                                     optimizer, train_tensor_maker, verbose, scaler)
+        train_loss, train_distance_start, train_distance_end, exact_score, f1_score = \
+            train(model, train_data, batch_size, criterion, optimizer, train_tensor_maker, verbose, scaler)
         end = time()
 
         history['loss'].append(train_loss)
@@ -250,7 +236,7 @@ def training_loop(model: BiDAF,
         if verbose:
             print(f'\tLoss: {train_loss:.5f} - Distance start: {train_distance_start:.2f} - '
                   f'Distance end: {train_distance_end:.2f}'
-                  f'exact_score: {exact_score:.2f} f1_score: {f1_score:.2f}' 
+                  f'exact_score: {exact_score:.2f} f1_score: {f1_score:.2f}'
                   f'[Time elapsed: {end - start:.2f} s]')
 
         # Do validation if required
@@ -262,8 +248,8 @@ def training_loop(model: BiDAF,
             random.shuffle(val_data)
 
             start = time()
-            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model, val_data, batch_size, criterion,
-                                                                      val_tensor_maker, verbose)
+            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = \
+                evaluate(model, val_data, batch_size, criterion, val_tensor_maker, verbose)
             end = time()
 
             history['val_loss'].append(val_loss)
@@ -274,7 +260,7 @@ def training_loop(model: BiDAF,
             if verbose:
                 print(f'\tValidation loss: {val_loss:.5f} - Distance start: {val_distance_start:.2f} - '
                       f'Distance end: {val_distance_end:.2f} '
-                      f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}' 
+                      f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}'
                       f'[Time elapsed: {end - start:.2f} s]')
 
             # Deactivate eval mode
@@ -306,46 +292,3 @@ def training_loop(model: BiDAF,
             lr_scheduler.step()
 
     return history
-
-
-def generate_evaluation_json(model: BiDAF,
-                             evaluation_data: List[Tuple[List[str], List[str], Tuple[int, int]]],
-                             id_list: List[str],
-                             filename: str):
-    predictions = {}
-
-    with torch.no_grad():
-        batch_size = 32
-
-        # Create batch iterator
-        batch_iter = batch_iteration(evaluation_data, batch_size)
-
-        for i, batch in enumerate(batch_iter):
-            # Extract samples
-            batch_context, batch_query, _ = to_tuple_of_lists(batch)
-
-            # Filter valid samples in batches (in case of incomplete ones)
-            batch_context: Tuple[List[str]] = tuple([c for c in batch_context if len(c) > 0])
-            batch_query: Tuple[List[str]] = tuple([q for q in batch_query if len(q) > 0])
-
-            context_word_tensor, context_char_tensor, context_lengths = tensor_maker.get_tensor(batch_context)
-            query_word_tensor, query_char_tensor, query_lengths = tensor_maker.get_tensor(batch_query)
-
-            # Make prediction
-            p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
-                                             query_word_tensor, query_char_tensor)
-
-            # Compute distance metric
-            p_start = torch.argmax(p_soft_start, dim=1)
-            p_end = torch.argmax(p_soft_end, dim=1)
-
-            for j in range(batch_size):
-                start = p_start[j].item()
-                end = p_end[j].item()
-
-                answer = batch_context[j][start:end+1]
-                id = id_list[i * batch_size + j]
-                predictions[id] = answer
-
-    with open(filename, "w") as f:
-        f.write(json.dumps(predictions))

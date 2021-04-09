@@ -1,4 +1,5 @@
 import torch
+from matplotlib import pyplot as plt
 import collections
 from itertools import zip_longest
 from typing import Callable, List, Tuple
@@ -68,3 +69,50 @@ def get_raw_scores(context: Tuple[List[str]],
         f1_scores.append(compute_f1(true_answer, predicted_answer))
 
     return exact_scores, f1_scores
+
+
+def plot_history(history):
+    fig1, axes = plt.subplots(nrows=1, ncols=1, figsize=(7.5, 5))
+    plt.suptitle('loss', size='xx-large')
+    plt.tight_layout(rect=(0, 0.03, 1, 0.))
+
+    axes.plot(history['loss'], label='train_loss')
+    axes.plot(history['val_loss'], label='val_loss')
+    axes.set_title('loss')
+    axes.set(xlabel='# Epochs')
+    axes.grid()
+    axes.legend()
+
+    fig2, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 5))
+    plt.suptitle('scores', size='xx-large')
+    plt.tight_layout(rect=(0, 0.03, 1, 0.95))
+    axes[0].plot(history['exact_score'], label='train_exact_score')
+    axes[0].plot(history['val_exact_score'], label='val_exact_score')
+    axes[0].set_title('exact_score')
+    axes[0].set(xlabel='# Epochs')
+    axes[0].grid()
+    axes[0].legend()
+
+    axes[1].plot(history['f1_score'], label='train_f1_score')
+    axes[1].plot(history['val_f1_score'], label='val_f1_score')
+    axes[1].set_title('f1_score')
+    axes[1].set(xlabel='# Epochs')
+    axes[1].grid()
+    axes[1].legend()
+
+    fig3, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 5))
+    plt.suptitle('distances', size='xx-large')
+    plt.tight_layout(rect=(0, 0.03, 1, 0.95))
+    axes[0].plot(history['distance_end'], label='train_distance_end')
+    axes[0].plot(history['val_distance_end'], label='val_distance_end')
+    axes[0].set_title('distance_end')
+    axes[0].set(xlabel='# Epochs')
+    axes[0].grid()
+    axes[0].legend()
+
+    axes[1].plot(history['distance_start'], label='train_distance_start')
+    axes[1].plot(history['val_distance_start'], label='val_distance_start')
+    axes[1].set_title('distance_start')
+    axes[1].set(xlabel='# Epochs')
+    axes[1].grid()
+    axes[1].legend()

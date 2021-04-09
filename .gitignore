@@ -1,4 +1,4 @@
 .idea/
-qa-nlp/.ipynb_checkpoints
+qa-nlp/.ipynb_checkpoints/
 qa-nlp/predictions.json
 qa-nlp/test_answers.json

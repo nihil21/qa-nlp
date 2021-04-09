@@ -45,16 +45,7 @@ def train(model: XLNetForQuestionAnswering,
 
         # Tokenize context and query
         token_dict = tokenizer(batch_query, batch_context, padding=True)
-
         total_batch = len(batch_context)
-
-        # --- OLD ---
-        # questions = df_train.iloc[batch_index]['question'].tolist()
-        # contexts = [context_list[id] for id in df_train.iloc[batch_index]['context_index'].tolist()]
-        # labels = [labels_train[id] for id in batch_index]
-        # labels_start, labels_end = to_tuple_of_lists(labels)
-        # token_dict = tokenizer(questions, contexts, padding=True)
-        # total_batch = len(batch_index)
 
         # Adjust label_start and label_end considering the question length + [SEP] token
         offset = [input_id.index(tokenizer.sep_token_id) + 1 for input_id in token_dict['input_ids']]
@@ -145,14 +136,6 @@ def evaluate(model: XLNetForQuestionAnswering,
             token_dict = tokenizer(batch_query, batch_context, padding=True)
 
             total_batch = len(batch_context)
-
-            # --- OLD ---
-            # questions = df_val.iloc[batch_index]['question'].tolist()
-            # contexts = [context_list[id] for id in df_val.iloc[batch_index]['context_index'].tolist()]
-            # labels = [labels_val[id] for id in batch_index]
-            # labels_start, labels_end = to_tuple_of_lists(labels)
-            # token_dict = tokenizer(questions, contexts, padding=True)
-            # total_batch = len(batch_index)
 
             # Adjust label_start and label_end considering the question length + [SEP] token
             offset = [input_id.index(tokenizer.sep_token_id) + 1 for input_id in token_dict['input_ids']]
