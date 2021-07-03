@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from model.char_embedder import CharEmbedder
 from model.word_embedder import WordEmbedder
 from model.convolutional_highway_network import ConvolutionalHighwayNetwork
-from typing import Optional
 
 
 class BiDAF(nn.Module):
@@ -13,9 +12,9 @@ class BiDAF(nn.Module):
                  char_embedder: CharEmbedder,
                  train_word_embedder: WordEmbedder,
                  eval_word_embedder: WordEmbedder,
-                 use_lstm: Optional[bool] = False,
-                 use_constraint: Optional[bool] = False,
-                 use_dropout: Optional[bool] = False):
+                 use_lstm: bool = False,
+                 use_constraint: bool = False,
+                 use_dropout: bool = False):
         super(BiDAF, self).__init__()
 
         self.use_constraint = use_constraint

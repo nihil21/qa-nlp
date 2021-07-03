@@ -6,20 +6,20 @@ import random
 import numpy as np
 from time import time
 from tqdm.notebook import tqdm
-from typing import Callable, List, Tuple, Dict, Optional
+import typing
 from utils.squad_utils import get_raw_scores, mean, to_tuple_of_lists, batch_iteration
 
 
 # Train function util
 def train(model: BiDAF,
-          data: List[Tuple[List[str], List[str], Tuple[int, int]]],
+          data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
           batch_size: int,
-          criterion: Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                              torch.FloatTensor],
+          criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
+                                     torch.FloatTensor],
           optimizer: torch.optim,
           tensor_maker: TensorMaker,
-          verbose: Optional[bool] = False,
-          scaler: Optional[torch.cuda.amp.grad_scaler.GradScaler] = False) -> (float, int, int):
+          verbose: bool = False,
+          scaler: torch.cuda.amp.grad_scaler.GradScaler = False) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -39,8 +39,8 @@ def train(model: BiDAF,
         batch_context, batch_query, batch_label = (to_tuple_of_lists(batch))
 
         # Filter valid samples in batches (in case of incomplete ones)
-        batch_context: Tuple[List[str]] = tuple([c for c in batch_context if len(c) > 0])
-        batch_query: Tuple[List[str]] = tuple([q for q in batch_query if len(q) > 0])
+        batch_context: typing.Tuple[typing.List[str]] = tuple([c for c in batch_context if len(c) > 0])
+        batch_query: typing.Tuple[typing.List[str]] = tuple([q for q in batch_query if len(q) > 0])
         batch_label = [lab for lab in batch_label if len(lab) > 0]
 
         # Extract start and end indexes
@@ -104,12 +104,12 @@ def train(model: BiDAF,
 
 # Evaluate function util
 def evaluate(model: BiDAF,
-             data: List[Tuple[List[str], List[str], Tuple[int, int]]],
+             data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
              batch_size: int,
-             criterion: Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                 torch.FloatTensor],
+             criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
+                                        torch.FloatTensor],
              tensor_maker: TensorMaker,
-             verbose: Optional[bool] = False) -> (float, int, int):
+             verbose: bool = False) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -128,8 +128,8 @@ def evaluate(model: BiDAF,
             batch_context, batch_query, batch_label = to_tuple_of_lists(batch)
 
             # Filter valid samples in batches (in case of incomplete ones)
-            batch_context: Tuple[List[str]] = tuple([c for c in batch_context if len(c) > 0])
-            batch_query: Tuple[List[str]] = tuple([q for q in batch_query if len(q) > 0])
+            batch_context: typing.Tuple[typing.List[str]] = tuple([c for c in batch_context if len(c) > 0])
+            batch_query: typing.Tuple[typing.List[str]] = tuple([q for q in batch_query if len(q) > 0])
             batch_label = [lab for lab in batch_label if len(lab) > 0]
 
             # Extract start and end indexes
@@ -175,23 +175,24 @@ def evaluate(model: BiDAF,
 
 # Training loop function util
 def training_loop(model: BiDAF,
-                  train_data: List[Tuple[List[str], List[str], Tuple[int, int]]],
+                  train_data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
                   optimizer: torch.optim,
                   epochs: int,
                   batch_size: int,
-                  criterion: Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                      torch.FloatTensor],
+                  criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
+                                             torch.FloatTensor],
                   train_tensor_maker: TensorMaker,
-                  val_tensor_maker: Optional[TensorMaker] = None,
+                  val_tensor_maker: typing.Optional[TensorMaker] = None,
                   lr_scheduler: torch.optim.lr_scheduler = None,
-                  val_data: Optional[List[Tuple[List[str], List[str], Tuple[int, int]]]] = None,
-                  early_stopping: Optional[bool] = False,
-                  patience: Optional[int] = 5,
-                  tolerance: Optional[float] = 1e-4,
-                  checkpoint_path: Optional[str] = None,
-                  verbose: Optional[bool] = True,
-                  seed: Optional[int] = 42,
-                  mix_scale: Optional[bool] = False) -> (Dict[str, List[float]]):
+                  val_data: typing.Optional[typing.List[typing.Tuple[typing.List[str], typing.List[str],
+                                                                     typing.Tuple[int, int]]]] = None,
+                  early_stopping: bool = False,
+                  patience: int = 5,
+                  tolerance: float = 1e-4,
+                  checkpoint_path: typing.Optional[str] = None,
+                  verbose: bool = True,
+                  seed: int = 42,
+                  mix_scale: bool = False) -> (typing.Dict[str, typing.List[float]]):
     # Set seed for reproducibility
     if seed:
         random.seed(seed)

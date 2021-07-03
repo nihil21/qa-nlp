@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Tuple
+import typing
 
 
 class ConvolutionalHighwayNetwork(nn.Module):
     
     def __init__(self,
-                 kernel: Tuple[int] = (5, 5),
+                 kernel: typing.Tuple[int] = (5, 5),
                  input_embedding_dim: int = 600,
                  ):
         super(ConvolutionalHighwayNetwork, self).__init__()

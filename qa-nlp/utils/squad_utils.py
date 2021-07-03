@@ -2,7 +2,7 @@ import torch
 from matplotlib import pyplot as plt
 import collections
 from itertools import zip_longest
-from typing import Callable, List, Tuple
+import typing
 
 
 # Define PAD and UNK tokens
@@ -11,17 +11,19 @@ UNK = '<UNK>'
 
 
 # Lambda for computing the mean of a list
-mean: Callable[[List[float]], float] = lambda l: sum(l) / len(l)
+mean: typing.Callable[[typing.List[float]], float] = lambda l: sum(l) / len(l)
 
 # Lambda for transforming a list of tuples into a tuple of lists
-to_tuple_of_lists: Callable[[List[Tuple]], Tuple[List]] = lambda list_of_tuples: tuple(map(list, zip(*list_of_tuples)))
+to_tuple_of_lists: typing.Callable[[typing.List[typing.Tuple]], typing.Tuple[typing.List]] = \
+    lambda list_of_tuples: tuple(map(list, zip(*list_of_tuples)))
 
 # Lambda for transforming a tuple of lists into a list of tuples
-to_list_of_tuples: Callable[[Tuple[List]], List[Tuple]] = lambda tuple_of_lists: list(zip(*tuple_of_lists))
+to_list_of_tuples: typing.Callable[[typing.Tuple[typing.List]], typing.List[typing.Tuple]] = \
+    lambda tuple_of_lists: list(zip(*tuple_of_lists))
 
 # Lambda for iterating with batches (if the length of the sequences does not match with the batch size,
 # tuples of empty lists are appended)
-batch_iteration: Callable[[List[Tuple], int], zip] = lambda data, batch_size: \
+batch_iteration: typing.Callable[[typing.List[typing.Tuple], int], zip] = lambda data, batch_size: \
     zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
 
 
@@ -53,17 +55,17 @@ def compute_f1(true_answer, predicted_answer):
     return f1
 
 
-def get_raw_scores(context: Tuple[List[str]],
-                   label_start: List[int],
-                   label_end: List[int],
-                   p_start: List[int],
-                   p_end: List[int]):
+def get_raw_scores(context: typing.Tuple[typing.List[str]],
+                   label_start: typing.List[int],
+                   label_end: typing.List[int],
+                   p_start: typing.List[int],
+                   p_end: typing.List[int]):
     exact_scores = []
     f1_scores = []
 
     for i, c in enumerate(context):
-        true_answer = c[label_start[i]:label_end[i] +1 ]
-        predicted_answer = c[p_start[i]:p_end[i] +1 ]
+        true_answer = c[label_start[i]:label_end[i] + 1]
+        predicted_answer = c[p_start[i]:p_end[i] + 1]
 
         exact_scores.append(int(true_answer == predicted_answer))
         f1_scores.append(compute_f1(true_answer, predicted_answer))

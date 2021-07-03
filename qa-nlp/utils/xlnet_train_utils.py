@@ -6,18 +6,18 @@ from tqdm.notebook import tqdm
 from model.xlnet_squad import XLNetForQuestionAnswering
 from transformers import XLNetTokenizerFast
 from utils.squad_utils import mean, to_tuple_of_lists, batch_iteration, get_raw_scores
-from typing import Callable, List, Tuple, Optional
+import typing
 
 
 # Train function util
 def train(model: XLNetForQuestionAnswering,
-          data: List[Tuple[str, str, Tuple[int, int]]],
+          data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
           batch_size: int,
-          criterion: Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                              torch.FloatTensor],
+          criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
+                                     torch.FloatTensor],
           optimizer: torch.optim,
           tokenizer: XLNetTokenizerFast,
-          verbose: Optional[bool] = False) -> (float, int, int):
+          verbose: bool = False) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -36,8 +36,8 @@ def train(model: XLNetForQuestionAnswering,
         batch_context, batch_query, batch_label = to_tuple_of_lists(batch)
 
         # Filter valid samples in batches (in case of incomplete ones)
-        batch_context: Tuple[str] = tuple([c for c in batch_context if len(c) > 0])
-        batch_query: Tuple[str] = tuple([q for q in batch_query if len(q) > 0])
+        batch_context: typing.Tuple[str] = tuple([c for c in batch_context if len(c) > 0])
+        batch_query: typing.Tuple[str] = tuple([q for q in batch_query if len(q) > 0])
         batch_label = [lab for lab in batch_label if len(lab) > 0]
 
         # Extract start and end indexes
@@ -90,20 +90,22 @@ def train(model: XLNetForQuestionAnswering,
 
     if flag == 0:
         print(
-            f'Start_pred: {p_start[0].item()}, End_pred: {p_end[0].item()}, Start_true: {labels_start[0].item()}, End_true: {labels_end[0].item()}')
+            f'Start_pred: {p_start[0].item()}, End_pred: {p_end[0].item()}, '
+            f'Start_true: {labels_start[0].item()}, End_true: {labels_end[0].item()}')
         flag += 1
 
-    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
+    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, \
+        f1_scores_total / total
 
 
 # Evaluate function util
 def evaluate(model: XLNetForQuestionAnswering,
-             data: List[Tuple[str, str, Tuple[int, int]]],
+             data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
              batch_size: int,
-             criterion: Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                 torch.FloatTensor],
+             criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
+                                        torch.FloatTensor],
              tokenizer: XLNetTokenizerFast,
-             verbose: Optional[bool] = False) -> (float, int, int):
+             verbose: bool = False) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -125,8 +127,8 @@ def evaluate(model: XLNetForQuestionAnswering,
             batch_context, batch_query, batch_label = to_tuple_of_lists(batch)
 
             # Filter valid samples in batches (in case of incomplete ones)
-            batch_context: Tuple[str] = tuple([c for c in batch_context if len(c) > 0])
-            batch_query: Tuple[str] = tuple([q for q in batch_query if len(q) > 0])
+            batch_context: typing.Tuple[str] = tuple([c for c in batch_context if len(c) > 0])
+            batch_query: typing.Tuple[str] = tuple([q for q in batch_query if len(q) > 0])
             batch_label = [lab for lab in batch_label if len(lab) > 0]
 
             # Extract start and end indexes
@@ -180,26 +182,27 @@ def evaluate(model: XLNetForQuestionAnswering,
                       f'Start (T): {labels_start[0].item()}, End (T): {labels_end[0].item()}')
                 flag += 1
 
-    return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
+    return mean(
+        loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
 
 
 # Training loop function util
 def training_loop(model: XLNetForQuestionAnswering,
-                  train_data: List[Tuple[str, str, Tuple[int, int]]],
+                  train_data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
                   optimizer: torch.optim,
                   epochs: int,
                   batch_size: int,
-                  criterion: Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                      torch.FloatTensor],
+                  criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
+                                             torch.FloatTensor],
                   tokenizer: XLNetTokenizerFast,
-                  val_data: List[Tuple[str, str, Tuple[int, int]]] = None,
+                  val_data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]] = None,
                   lr_scheduler: torch.optim.lr_scheduler = None,
-                  early_stopping: Optional[bool] = False,
-                  patience: Optional[int] = 5,
-                  tolerance: Optional[float] = 1e-4,
-                  checkpoint_path: Optional[str] = None,
-                  verbose: Optional[bool] = True,
-                  seed: Optional[int] = 42):
+                  early_stopping: bool = False,
+                  patience: int = 5,
+                  tolerance: float = 1e-4,
+                  checkpoint_path: typing.Optional[str] = None,
+                  verbose: bool = True,
+                  seed: int = 42):
     # Set seed for reproducibility
     if seed:
         random.seed(seed)

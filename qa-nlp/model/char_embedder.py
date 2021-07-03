@@ -1,19 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional
 
 
 class CharEmbedder(nn.Module):
 
     def __init__(self,
                  init_emb: torch.Tensor,
-                 out_char_emb_dim: Optional[int] = 50,
-                 hidden_dim: Optional[int] = 64,
-                 input_channels: Optional[int] = 1,
-                 output_channels: Optional[int] = 100,
-                 kernel_height: Optional[int] = 5,
-                 trainable: Optional[bool] = False):
+                 out_char_emb_dim: int = 50,
+                 hidden_dim: int = 64,
+                 input_channels: int = 1,
+                 output_channels: int = 100,
+                 kernel_height: int = 5,
+                 trainable: bool = False):
         super(CharEmbedder, self).__init__()
 
         # Create embedding layer (one extra row for padding)

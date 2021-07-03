@@ -23,21 +23,22 @@ import pandas as pd
 from tqdm import tqdm
 
 # Type hint
-from typing import Callable, Tuple, List
+import typing
 
 # Set device to GPU if available
 DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # Lambda for transforming a list of tuples into a tuple of lists
-to_tuple_of_lists: Callable[[List[Tuple]], Tuple[List]] = lambda list_of_tuples: tuple(map(list, zip(*list_of_tuples)))
+to_tuple_of_lists: typing.Callable[[typing.List[typing.Tuple]], typing.Tuple[typing.List]] = \
+    lambda list_of_tuples: tuple(map(list, zip(*list_of_tuples)))
 
 # Lambda for iterating with batches
 # (if the length of the sequences does not match with the batch size, tuples of empty lists are appended)
-batch_iteration: Callable[[List[Tuple]], zip] = lambda data, batch_size: \
+batch_iteration: typing.Callable[[typing.List[typing.Tuple]], zip] = lambda data, batch_size: \
     zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
 
 
-def tokenize_corpus(df: pd.DataFrame, context_list: List[str]):
+def tokenize_corpus(df: pd.DataFrame, context_list: typing.List[str]):
     twt = TreebankWordTokenizer()
     
     # Retrieve contexts
@@ -54,9 +55,9 @@ def tokenize_corpus(df: pd.DataFrame, context_list: List[str]):
 
 def generate_evaluation_json(model: BiDAF,
                              tensor_maker: TensorMaker,
-                             evaluation_data: List[Tuple[str, List[str], List[str]]],
-                             spans_list: List[List[Tuple[int, int]]],
-                             id_list: List[str],
+                             evaluation_data: typing.List[typing.Tuple[str, typing.List[str], typing.List[str]]],
+                             spans_list: typing.List[typing.List[typing.Tuple[int, int]]],
+                             id_list: typing.List[str],
                              filename: str):
     predictions = {}
  
