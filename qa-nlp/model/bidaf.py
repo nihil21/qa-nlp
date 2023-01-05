@@ -1,20 +1,23 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model.char_embedder import CharEmbedder
-from model.word_embedder import WordEmbedder
-from model.convolutional_highway_network import ConvolutionalHighwayNetwork
+
+from .char_embedder import CharEmbedder
+from .word_embedder import WordEmbedder
+from .convolutional_highway_network import ConvolutionalHighwayNetwork
 
 
 class BiDAF(nn.Module):
 
-    def __init__(self,
-                 char_embedder: CharEmbedder,
-                 train_word_embedder: WordEmbedder,
-                 eval_word_embedder: WordEmbedder,
-                 use_lstm: bool = False,
-                 use_constraint: bool = False,
-                 use_dropout: bool = False):
+    def __init__(
+            self,
+            char_embedder: CharEmbedder,
+            train_word_embedder: WordEmbedder,
+            eval_word_embedder: WordEmbedder,
+            use_lstm: bool = False,
+            use_constraint: bool = False,
+            use_dropout: bool = False
+    ):
         super(BiDAF, self).__init__()
 
         self.use_constraint = use_constraint
@@ -38,23 +41,52 @@ class BiDAF(nn.Module):
         # Step 5: Modelling layer
         # bidirectional = True -> concat output
         # num_layers = 2 -> average output
-        self.mod_rnn = nn.LSTM(input_size=8 * self.d, hidden_size=self.d, bidirectional=True, num_layers=2,
-                               batch_first=True, dropout=0.2 if use_dropout else 0) \
-            if use_lstm else nn.GRU(input_size=8 * self.d, hidden_size=self.d, bidirectional=True, num_layers=2,
-                                    batch_first=True, dropout=0.2 if use_dropout else 0)  # use LSTM or GRU
+        self.mod_rnn = nn.LSTM(
+            input_size=8 * self.d,
+            hidden_size=self.d,
+            bidirectional=True,
+            num_layers=2,
+            batch_first=True,
+            dropout=0.2 if use_dropout else 0
+        ) if use_lstm else nn.GRU(
+            input_size=8 * self.d,
+            hidden_size=self.d,
+            bidirectional=True,
+            num_layers=2,
+            batch_first=True,
+            dropout=0.2 if use_dropout else 0
+        )  # use LSTM or GRU
 
         # Step 6: Output layer
         self.w_p_start = nn.Linear(in_features=10 * self.d, out_features=1, bias=False)
         if use_constraint:  # concatenate p_start -> 2d + 1 input size
-            self.p_end_rnn = nn.LSTM(input_size=2 * self.d + 1, hidden_size=self.d, bidirectional=True,
-                                     batch_first=True, dropout=0.2 if use_dropout else 0) \
-                if use_lstm else nn.GRU(input_size=2 * self.d + 1, hidden_size=self.d, bidirectional=True,
-                                        batch_first=True, dropout=0.2 if use_dropout else 0)  # use LSTM or GRU
+            self.p_end_rnn = nn.LSTM(
+                input_size=2 * self.d + 1,
+                hidden_size=self.d,
+                bidirectional=True,
+                batch_first=True,
+                dropout=0.2 if use_dropout else 0
+            ) if use_lstm else nn.GRU(
+                input_size=2 * self.d + 1,
+                hidden_size=self.d,
+                bidirectional=True,
+                batch_first=True,
+                dropout=0.2 if use_dropout else 0
+            )  # use LSTM or GRU
         else:  # standard version -> 2d input size
-            self.p_end_rnn = nn.LSTM(input_size=2 * self.d, hidden_size=self.d, bidirectional=True,
-                                     batch_first=True, dropout=0.2 if use_dropout else 0) \
-                if use_lstm else nn.GRU(input_size=2 * self.d, hidden_size=self.d, bidirectional=True,
-                                        batch_first=True, dropout=0.2 if use_dropout else 0)  # use LSTM or GRU
+            self.p_end_rnn = nn.LSTM(
+                input_size=2 * self.d,
+                hidden_size=self.d,
+                bidirectional=True,
+                batch_first=True,
+                dropout=0.2 if use_dropout else 0
+            ) if use_lstm else nn.GRU(
+                input_size=2 * self.d,
+                hidden_size=self.d,
+                bidirectional=True,
+                batch_first=True,
+                dropout=0.2 if use_dropout else 0
+            )  # use LSTM or GRU
 
         self.w_p_end = nn.Linear(in_features=10 * self.d, out_features=1, bias=False)
 
@@ -69,11 +101,13 @@ class BiDAF(nn.Module):
         ctx_emb, _ = self.ctx_rnn(merged_emb)
         return ctx_emb
 
-    def forward(self,
-                batch_context_word: torch.LongTensor,
-                batch_context_char: torch.LongTensor,
-                batch_query_word: torch.LongTensor,
-                batch_query_char: torch.LongTensor):
+    def forward(
+            self,
+            batch_context_word: torch.LongTensor,
+            batch_context_char: torch.LongTensor,
+            batch_query_word: torch.LongTensor,
+            batch_query_char: torch.LongTensor
+    ):
         # Apply step 1 to 3 for context
         ctx_emb_c = self._get_contextual_embedding(batch_context_word, batch_context_char)
         # Apply step 1 to 3 for query
@@ -101,7 +135,7 @@ class BiDAF(nn.Module):
         # Step 6: Output layer
         p_start = F.softmax(self.w_p_start(torch.cat([g, m], dim=-1)), dim=1)  # (bs, t)
         # If specified, concatenate p_start with RNN input to impose constraint
-        m_2, _ = self.p_end_rnn(torch.cat([m, p_start], dim=-1)) \
-            if self.use_constraint else self.p_end_rnn(m)  # (bs, t, 2d)
+        m_2, _ = self.p_end_rnn(torch.cat([m, p_start], dim=-1)) if self.use_constraint \
+            else self.p_end_rnn(m)  # (bs, t, 2d)
         p_end = F.softmax(self.w_p_end(torch.cat([g, m_2], dim=-1)), dim=1)  # (bs, t)
         return p_start.squeeze(2), p_end.squeeze(2)

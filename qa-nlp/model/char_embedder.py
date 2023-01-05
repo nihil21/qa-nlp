@@ -5,14 +5,16 @@ import torch.nn.functional as F
 
 class CharEmbedder(nn.Module):
 
-    def __init__(self,
-                 init_emb: torch.Tensor,
-                 out_char_emb_dim: int = 50,
-                 hidden_dim: int = 64,
-                 input_channels: int = 1,
-                 output_channels: int = 100,
-                 kernel_height: int = 5,
-                 trainable: bool = False):
+    def __init__(
+            self,
+            init_emb: torch.Tensor,
+            out_char_emb_dim: int = 50,
+            hidden_dim: int = 64,
+            input_channels: int = 1,
+            output_channels: int = 100,
+            kernel_height: int = 5,
+            trainable: bool = False
+    ):
         super(CharEmbedder, self).__init__()
 
         # Create embedding layer (one extra row for padding)
@@ -21,12 +23,14 @@ class CharEmbedder(nn.Module):
         self.word_emb_dim = init_emb.shape[1]
 
         input_char_embedding_dimension = init_emb.shape[1]
-        self.conv_layer = nn.Conv2d(in_channels=input_channels,
-                                    out_channels=output_channels,
-                                    kernel_size=(kernel_height, input_char_embedding_dimension),
-                                    stride=1,
-                                    padding=(2, 0),
-                                    bias=False)
+        self.conv_layer = nn.Conv2d(
+            in_channels=input_channels,
+            out_channels=output_channels,
+            kernel_size=(kernel_height, input_char_embedding_dimension),
+            stride=1,
+            padding=(2, 0),
+            bias=False
+        )
 
         self.fc1 = nn.Linear(in_features=output_channels, out_features=hidden_dim, bias=False)
         self.fc2 = nn.Linear(in_features=hidden_dim, out_features=out_char_emb_dim, bias=False)

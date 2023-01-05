@@ -4,9 +4,11 @@ import torch.nn as nn
 
 class WordEmbedder(nn.Module):
 
-    def __init__(self,
-                 init_emb: torch.Tensor,
-                 trainable: bool = False):
+    def __init__(
+            self,
+            init_emb: torch.Tensor,
+            trainable: bool = False
+    ):
         super(WordEmbedder, self).__init__()
         # Create embedding layer
         self.embedding = nn.Embedding.from_pretrained(init_emb, freeze=not trainable)

@@ -1,8 +1,9 @@
+import collections
+import typing
+from itertools import zip_longest
+
 import torch
 from matplotlib import pyplot as plt
-import collections
-from itertools import zip_longest
-import typing
 
 
 # Define PAD and UNK tokens
@@ -27,8 +28,12 @@ batch_iteration: typing.Callable[[typing.List[typing.Tuple], int], zip] = lambda
     zip_longest(*[iter(data)] * batch_size, fillvalue=([], [], []))
 
 
-def squad_loss(p_start: torch.FloatTensor, p_end: torch.FloatTensor,
-               y_start: torch.LongTensor, y_end: torch.LongTensor) -> torch.FloatTensor:
+def squad_loss(
+        p_start: torch.FloatTensor,
+        p_end: torch.FloatTensor,
+        y_start: torch.LongTensor,
+        y_end: torch.LongTensor
+) -> torch.FloatTensor:
     bs = p_start.size(0)
     # Retrieve the probability of the correct start and end indexes
     p_true_start = torch.gather(p_start, 1, y_start.unsqueeze(1))  # equivalent to p_start[y_start]
@@ -55,11 +60,13 @@ def compute_f1(true_answer, predicted_answer):
     return f1
 
 
-def get_raw_scores(context: typing.Tuple[typing.List[str]],
-                   label_start: typing.List[int],
-                   label_end: typing.List[int],
-                   p_start: typing.List[int],
-                   p_end: typing.List[int]):
+def get_raw_scores(
+        context: typing.Tuple[typing.List[str]],
+        label_start: typing.List[int],
+        label_end: typing.List[int],
+        p_start: typing.List[int],
+        p_end: typing.List[int]
+):
     exact_scores = []
     f1_scores = []
 

@@ -1,40 +1,50 @@
+import typing
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import typing
 
 
 class ConvolutionalHighwayNetwork(nn.Module):
     
-    def __init__(self,
-                 kernel: typing.Tuple[int] = (5, 5),
-                 input_embedding_dim: int = 600,
-                 ):
+    def __init__(
+            self,
+            kernel: typing.Tuple[int] = (5, 5),
+            input_embedding_dim: int = 600,
+    ):
         super(ConvolutionalHighwayNetwork, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channels=1,
-                               out_channels=1,
-                               kernel_size=kernel,
-                               stride=1,
-                               padding=(int(kernel[0] / 2), int(kernel[1] / 2)))
+        self.conv1 = nn.Conv2d(
+            in_channels=1,
+            out_channels=1,
+            kernel_size=kernel,
+            stride=1,
+            padding=(int(kernel[0] / 2), int(kernel[1] / 2))
+        )
 
-        self.gate1 = nn.Conv2d(in_channels=1,
-                               out_channels=1,
-                               kernel_size=(kernel[0], input_embedding_dim),
-                               stride=1,
-                               padding=(int(kernel[0] / 2), 0))
+        self.gate1 = nn.Conv2d(
+            in_channels=1,
+            out_channels=1,
+            kernel_size=(kernel[0], input_embedding_dim),
+            stride=1,
+            padding=(int(kernel[0] / 2), 0)
+        )
 
-        self.conv2 = nn.Conv2d(in_channels=1,
-                               out_channels=1,
-                               kernel_size=kernel,
-                               stride=1,
-                               padding=(int(kernel[0] / 2), int(kernel[1] / 2)))
+        self.conv2 = nn.Conv2d(
+            in_channels=1,
+            out_channels=1,
+            kernel_size=kernel,
+            stride=1,
+            padding=(int(kernel[0] / 2), int(kernel[1] / 2))
+        )
 
-        self.gate2 = nn.Conv2d(in_channels=1,
-                               out_channels=1,
-                               kernel_size=(kernel[0], input_embedding_dim),
-                               stride=1,
-                               padding=(int(kernel[0] / 2), 0))
+        self.gate2 = nn.Conv2d(
+            in_channels=1,
+            out_channels=1,
+            kernel_size=(kernel[0], input_embedding_dim),
+            stride=1,
+            padding=(int(kernel[0] / 2), 0)
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # (batch_size, word_length, input_embedding_dim) ->

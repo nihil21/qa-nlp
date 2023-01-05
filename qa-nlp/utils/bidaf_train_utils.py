@@ -1,25 +1,29 @@
-import torch
-
-from model.bidaf import BiDAF
-from model.tensor_maker import TensorMaker
 import random
-import numpy as np
-from time import time
-from tqdm.notebook import tqdm
 import typing
-from utils.squad_utils import get_raw_scores, mean, to_tuple_of_lists, batch_iteration
+from time import time
+
+import numpy as np
+import torch
+from tqdm.notebook import tqdm
+
+from ..model.bidaf import BiDAF
+from ..model.tensor_maker import TensorMaker
+from ..utils.squad_utils import get_raw_scores, mean, to_tuple_of_lists, batch_iteration
 
 
 # Train function util
-def train(model: BiDAF,
-          data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
-          batch_size: int,
-          criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                     torch.FloatTensor],
-          optimizer: torch.optim,
-          tensor_maker: TensorMaker,
-          verbose: bool = False,
-          scaler: torch.cuda.amp.grad_scaler.GradScaler = False) -> (float, int, int):
+def train(
+        model: BiDAF,
+        data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
+        batch_size: int,
+        criterion: typing.Callable[
+            [torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor], torch.FloatTensor
+        ],
+        optimizer: torch.optim,
+        tensor_maker: TensorMaker,
+        verbose: bool = False,
+        scaler: torch.cuda.amp.grad_scaler.GradScaler = False
+) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -57,8 +61,12 @@ def train(model: BiDAF,
             # Make prediction
             optimizer.zero_grad()
             with torch.cuda.amp.autocast():  # https://pytorch.org/docs/stable/notes/amp_examples.html
-                p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
-                                                 query_word_tensor, query_char_tensor)
+                p_soft_start, p_soft_end = model(
+                    context_word_tensor,
+                    context_char_tensor,
+                    query_word_tensor,
+                    query_char_tensor
+                )
                 loss = criterion(p_soft_start, p_soft_end, labels_start, labels_end)
             # Backpropagation
             scaler.scale(loss).backward()  # https://pytorch.org/docs/stable/notes/amp_examples.html
@@ -68,8 +76,12 @@ def train(model: BiDAF,
             # Make prediction
             optimizer.zero_grad()
 
-            p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
-                                             query_word_tensor, query_char_tensor)
+            p_soft_start, p_soft_end = model(
+                context_word_tensor,
+                context_char_tensor,
+                query_word_tensor,
+                query_char_tensor
+            )
 
             loss = criterion(p_soft_start, p_soft_end, labels_start, labels_end)
             # Backpropagation
@@ -103,13 +115,15 @@ def train(model: BiDAF,
 
 
 # Evaluate function util
-def evaluate(model: BiDAF,
-             data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
-             batch_size: int,
-             criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                        torch.FloatTensor],
-             tensor_maker: TensorMaker,
-             verbose: bool = False) -> (float, int, int):
+def evaluate(
+        model: BiDAF,
+        data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
+        batch_size: int,
+        criterion: typing.Callable[
+            [torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor], torch.FloatTensor],
+        tensor_maker: TensorMaker,
+        verbose: bool = False
+) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -143,8 +157,12 @@ def evaluate(model: BiDAF,
             labels_end = torch.cuda.LongTensor(labels_end)
 
             # Make prediction
-            p_soft_start, p_soft_end = model(context_word_tensor, context_char_tensor,
-                                             query_word_tensor, query_char_tensor)
+            p_soft_start, p_soft_end = model(
+                context_word_tensor,
+                context_char_tensor,
+                query_word_tensor,
+                query_char_tensor
+            )
             # Compute loss
             loss = criterion(p_soft_start, p_soft_end, labels_start, labels_end)
 
@@ -174,39 +192,45 @@ def evaluate(model: BiDAF,
 
 
 # Training loop function util
-def training_loop(model: BiDAF,
-                  train_data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
-                  optimizer: torch.optim,
-                  epochs: int,
-                  batch_size: int,
-                  criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                             torch.FloatTensor],
-                  train_tensor_maker: TensorMaker,
-                  val_tensor_maker: typing.Optional[TensorMaker] = None,
-                  lr_scheduler: torch.optim.lr_scheduler = None,
-                  val_data: typing.Optional[typing.List[typing.Tuple[typing.List[str], typing.List[str],
-                                                                     typing.Tuple[int, int]]]] = None,
-                  early_stopping: bool = False,
-                  patience: int = 5,
-                  tolerance: float = 1e-4,
-                  checkpoint_path: typing.Optional[str] = None,
-                  verbose: bool = True,
-                  seed: int = 42,
-                  mix_scale: bool = False) -> (typing.Dict[str, typing.List[float]]):
+def training_loop(
+        model: BiDAF,
+        train_data: typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]],
+        optimizer: torch.optim,
+        epochs: int,
+        batch_size: int,
+        criterion: typing.Callable[
+            [torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor], torch.FloatTensor
+        ],
+        train_tensor_maker: TensorMaker,
+        val_tensor_maker: typing.Optional[TensorMaker] = None,
+        lr_scheduler: torch.optim.lr_scheduler = None,
+        val_data: typing.Optional[
+            typing.List[typing.Tuple[typing.List[str], typing.List[str], typing.Tuple[int, int]]]
+        ] = None,
+        early_stopping: bool = False,
+        patience: int = 5,
+        tolerance: float = 1e-4,
+        checkpoint_path: typing.Optional[str] = None,
+        verbose: bool = True,
+        seed: int = 42,
+        mix_scale: bool = False
+) -> (typing.Dict[str, typing.List[float]]):
     # Set seed for reproducibility
     if seed:
         random.seed(seed)
 
-    history = {'loss': [],
-               'distance_start': [],
-               'distance_end': [],
-               'exact_score': [],
-               'f1_score': [],
-               'val_loss': [],
-               'val_distance_start': [],
-               'val_distance_end': [],
-               'val_exact_score': [],
-               'val_f1_score': []}
+    history = {
+        'loss': [],
+        'distance_start': [],
+        'distance_end': [],
+        'exact_score': [],
+        'f1_score': [],
+        'val_loss': [],
+        'val_distance_start': [],
+        'val_distance_end': [],
+        'val_exact_score': [],
+        'val_f1_score': []
+    }
 
     # Initialize variables for early stopping
     min_val_loss = np.inf
@@ -259,10 +283,12 @@ def training_loop(model: BiDAF,
             history['val_exact_score'].append(val_exact_score)
             history['val_f1_score'].append(val_f1_score)
             if verbose:
-                print(f'\tValidation loss: {val_loss:.5f} - Distance start: {val_distance_start:.2f} - '
-                      f'Distance end: {val_distance_end:.2f} '
-                      f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}'
-                      f'[Time elapsed: {end - start:.2f} s]')
+                print(
+                    f'\tValidation loss: {val_loss:.5f} - Distance start: {val_distance_start:.2f} - '
+                    f'Distance end: {val_distance_end:.2f} '
+                    f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}'
+                    f'[Time elapsed: {end - start:.2f} s]'
+                )
 
             # Deactivate eval mode
             model.train()

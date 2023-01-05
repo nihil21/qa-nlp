@@ -1,23 +1,28 @@
-import torch
 import random
-import numpy as np
-from time import time
-from tqdm.notebook import tqdm
-from model.xlnet_squad import XLNetForQuestionAnswering
-from transformers import XLNetTokenizerFast
-from utils.squad_utils import mean, to_tuple_of_lists, batch_iteration, get_raw_scores
 import typing
+from time import time
+
+import numpy as np
+import torch
+from tqdm.notebook import tqdm
+from transformers import XLNetTokenizerFast
+
+from ..model.xlnet_squad import XLNetForQuestionAnswering
+from ..utils.squad_utils import mean, to_tuple_of_lists, batch_iteration, get_raw_scores
 
 
 # Train function util
-def train(model: XLNetForQuestionAnswering,
-          data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
-          batch_size: int,
-          criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                     torch.FloatTensor],
-          optimizer: torch.optim,
-          tokenizer: XLNetTokenizerFast,
-          verbose: bool = False) -> (float, int, int):
+def train(
+        model: XLNetForQuestionAnswering,
+        data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
+        batch_size: int,
+        criterion: typing.Callable[
+            [torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor], torch.FloatTensor
+        ],
+        optimizer: torch.optim,
+        tokenizer: XLNetTokenizerFast,
+        verbose: bool = False
+) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -91,7 +96,8 @@ def train(model: XLNetForQuestionAnswering,
     if flag == 0:
         print(
             f'Start_pred: {p_start[0].item()}, End_pred: {p_end[0].item()}, '
-            f'Start_true: {labels_start[0].item()}, End_true: {labels_end[0].item()}')
+            f'Start_true: {labels_start[0].item()}, End_true: {labels_end[0].item()}'
+        )
         flag += 1
 
     return mean(loss_data), distance_start / total, distance_end / total, exact_scores_total / total, \
@@ -99,13 +105,16 @@ def train(model: XLNetForQuestionAnswering,
 
 
 # Evaluate function util
-def evaluate(model: XLNetForQuestionAnswering,
-             data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
-             batch_size: int,
-             criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                        torch.FloatTensor],
-             tokenizer: XLNetTokenizerFast,
-             verbose: bool = False) -> (float, int, int):
+def evaluate(
+        model: XLNetForQuestionAnswering,
+        data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
+        batch_size: int,
+        criterion: typing.Callable[
+            [torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor], torch.FloatTensor
+        ],
+        tokenizer: XLNetTokenizerFast,
+        verbose: bool = False
+) -> (float, int, int):
     loss_data = []
     distance_start = 0
     distance_end = 0
@@ -178,45 +187,55 @@ def evaluate(model: XLNetForQuestionAnswering,
             total += total_batch
 
             if flag == 0:
-                print(f'Start (p): {p_start[0].item()}, End (p): {p_end[0].item()}, '
-                      f'Start (T): {labels_start[0].item()}, End (T): {labels_end[0].item()}')
+                print(
+                    f'Start (p): {p_start[0].item()}, End (p): {p_end[0].item()}, '
+                    f'Start (T): {labels_start[0].item()}, End (T): {labels_end[0].item()}'
+                )
                 flag += 1
 
-    return mean(
-        loss_data), distance_start / total, distance_end / total, exact_scores_total / total, f1_scores_total / total
+    return mean(loss_data), \
+        distance_start / total, \
+        distance_end / total, \
+        exact_scores_total / total, \
+        f1_scores_total / total
 
 
 # Training loop function util
-def training_loop(model: XLNetForQuestionAnswering,
-                  train_data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
-                  optimizer: torch.optim,
-                  epochs: int,
-                  batch_size: int,
-                  criterion: typing.Callable[[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor],
-                                             torch.FloatTensor],
-                  tokenizer: XLNetTokenizerFast,
-                  val_data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]] = None,
-                  lr_scheduler: torch.optim.lr_scheduler = None,
-                  early_stopping: bool = False,
-                  patience: int = 5,
-                  tolerance: float = 1e-4,
-                  checkpoint_path: typing.Optional[str] = None,
-                  verbose: bool = True,
-                  seed: int = 42):
+def training_loop(
+        model: XLNetForQuestionAnswering,
+        train_data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]],
+        optimizer: torch.optim,
+        epochs: int,
+        batch_size: int,
+        criterion: typing.Callable[
+            [torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor], torch.FloatTensor
+        ],
+        tokenizer: XLNetTokenizerFast,
+        val_data: typing.List[typing.Tuple[str, str, typing.Tuple[int, int]]] = None,
+        lr_scheduler: torch.optim.lr_scheduler = None,
+        early_stopping: bool = False,
+        patience: int = 5,
+        tolerance: float = 1e-4,
+        checkpoint_path: typing.Optional[str] = None,
+        verbose: bool = True,
+        seed: int = 42
+):
     # Set seed for reproducibility
     if seed:
         random.seed(seed)
 
-    history = {'loss': [],
-               'distance_start': [],
-               'distance_end': [],
-               'exact_score': [],
-               'f1_score': [],
-               'val_loss': [],
-               'val_distance_start': [],
-               'val_distance_end': [],
-               'val_exact_score': [],
-               'val_f1_score': []}
+    history = {
+        'loss': [],
+        'distance_start': [],
+        'distance_end': [],
+        'exact_score': [],
+        'f1_score': [],
+        'val_loss': [],
+        'val_distance_start': [],
+        'val_distance_end': [],
+        'val_exact_score': [],
+        'val_f1_score': []
+    }
 
     # Initialize variables for early stopping
     min_val_loss = np.inf
@@ -232,13 +251,15 @@ def training_loop(model: XLNetForQuestionAnswering,
         # shuffled_df_train = df_train.sample(frac=1, random_state=seed).reset_index(drop=True)
 
         start = time()
-        train_loss, train_distance_start, train_distance_end, exact_score, f1_score = train(model,
-                                                                                            shuffled_train_data,
-                                                                                            batch_size,
-                                                                                            criterion,
-                                                                                            optimizer,
-                                                                                            tokenizer,
-                                                                                            verbose)
+        train_loss, train_distance_start, train_distance_end, exact_score, f1_score = train(
+            model,
+            shuffled_train_data,
+            batch_size,
+            criterion,
+            optimizer,
+            tokenizer,
+            verbose
+        )
         end = time()
 
         history['loss'].append(train_loss)
@@ -248,10 +269,12 @@ def training_loop(model: XLNetForQuestionAnswering,
         history['f1_score'].append(f1_score)
 
         if verbose:
-            print(f'\tLoss: {train_loss:.5f} - Distance start: {train_distance_start:.2f} - '
-                  f'Distance end: {train_distance_end:.2f}'
-                  f'exact_score: {exact_score:.2f} f1_score: {f1_score:.2f}'
-                  f'[Time elapsed: {end - start:.2f} s]')
+            print(
+                f'\tLoss: {train_loss:.5f} - Distance start: {train_distance_start:.2f} - '
+                f'Distance end: {train_distance_end:.2f}'
+                f'exact_score: {exact_score:.2f} f1_score: {f1_score:.2f}'
+                f'[Time elapsed: {end - start:.2f} s]'
+            )
 
         # Do validation if required
         if val_data is not None:
@@ -259,12 +282,14 @@ def training_loop(model: XLNetForQuestionAnswering,
             model.eval()
 
             start = time()
-            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(model,
-                                                                                                     val_data,
-                                                                                                     batch_size,
-                                                                                                     criterion,
-                                                                                                     tokenizer,
-                                                                                                     verbose)
+            val_loss, val_distance_start, val_distance_end, val_exact_score, val_f1_score = evaluate(
+                model,
+                val_data,
+                batch_size,
+                criterion,
+                tokenizer,
+                verbose
+            )
             end = time()
 
             history['val_loss'].append(val_loss)
@@ -273,10 +298,12 @@ def training_loop(model: XLNetForQuestionAnswering,
             history['val_exact_score'].append(val_exact_score)
             history['val_f1_score'].append(val_f1_score)
             if verbose:
-                print(f'\tValidation loss: {val_loss:.5f} - Distance start: {val_distance_start:.2f} - '
-                      f'Distance end: {val_distance_end:.2f} '
-                      f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}'
-                      f'[Time elapsed: {end - start:.2f} s]')
+                print(
+                    f'\tValidation loss: {val_loss:.5f} - Distance start: {val_distance_start:.2f} - '
+                    f'Distance end: {val_distance_end:.2f} '
+                    f'exact_score: {val_exact_score:.2f} f1_score: {val_f1_score:.2f}'
+                    f'[Time elapsed: {end - start:.2f} s]'
+                )
 
             # Deactivate eval mode
             model.train()
@@ -295,8 +322,10 @@ def training_loop(model: XLNetForQuestionAnswering,
                 # If loss did not improve for 'patience' epochs, break
                 if no_improve_counter == patience:
                     if verbose:
-                        print(f'Early stopping: no improvement in validation loss for '
-                              f'{patience} epochs from {min_val_loss:.5f}')
+                        print(
+                            f'Early stopping: no improvement in validation loss for '
+                            f'{patience} epochs from {min_val_loss:.5f}'
+                        )
                     # Restore model to best
                     model.load_state_dict(torch.load(checkpoint_path))
                     model.eval()
